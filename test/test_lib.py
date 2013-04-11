@@ -1,0 +1,95 @@
+import os
+import sys
+from .. import abstract
+from .. import lib
+
+def test_equality(test):
+	# routes are rather abstract, but we dont want Routes for a given
+	# domain to match Routes with equal routing that exist in a distinct domain
+	ir = lib.Import(None, ('foo',))
+	fr = lib.File(None, ('foo',))
+	test/ir.crumbs == fr.crumbs
+	test/ir.datum == fr.datum
+
+	# crumbs and datum are identical, but the type needs to be the same as well.
+	test/ir != fr
+
+def test_Import(test):
+	# package.test
+	r = lib.Import.from_fullname(__package__)
+	# datum reduction
+	test/(~r is r) == True
+
+	# crawl stack; closest package module is chosen
+	test/lib.Import.from_context() == r
+
+	test/r.fullname == '.'.join((__package__, ))
+	test/r.module() == sys.modules[__package__]
+	test/r.container.module() == sys.modules['.'.join(__package__.split('.')[:-1])]
+
+	# stack
+	r = lib.Import.from_fullname(__package__)
+	modules = r.stack()
+	test/len(modules) == 2
+	test/modules[0] == r.module() # most "significant" module first
+	test/modules[1] == r.container.module()
+
+	# bottom
+	r = lib.Import.from_fullname(__package__)
+	test/r.bottom() == lib.Import.from_fullname('routes')
+
+	# project
+	from .. import project
+	r = lib.Import.from_fullname(__package__)
+	test/r.project() == project
+	test/r.last_modified() != None
+
+	# module that does not exist
+	r = lib.Import.from_fullname('+++++nosuch_module')
+	test/r.module() == None
+	test/r.root == r
+
+	# real resolution
+	r = lib.Import.from_fullname(__package__ + '.' + '+++++nosuch_module')
+	test/r.module() == None
+	test/r.real() == lib.Import.from_fullname(__package__)
+
+def test_File(test):
+	dir = os.path.dirname(os.path.realpath(__file__))
+	r = lib.File.from_absolute(os.path.realpath(__file__))
+	test/r.fullpath == os.path.realpath(__file__)
+	# datum reduction
+	test/(~r is r) == True
+
+	rd = r.container
+	test/rd.fullpath == dir
+
+	# tail
+	end = lib.File.from_absolute('foo')
+	test/(rd + end).fullpath == os.path.join(dir, 'foo')
+
+def test_File_temporary(test):
+	path = None
+	with lib.File.temporary() as t:
+		path = t.fullpath
+		test/os.path.exists(path) == True
+		test/t.is_container() == True
+		test/t.last_modified() != None
+
+	# temporary context over, should not exist.
+	test/os.path.exists(path) == False
+	test/OSError ^ t.last_modified
+
+def test_File_void(test):
+	with lib.File.temporary() as t:
+		f = t/'doesnotexist'
+		test/f.is_container() == False
+		test/f.real() != f
+
+def test_File_basename_manipulations(test):
+	with lib.File.temporary() as t:
+		f = t/'doesnotexist'
+		f_archive = f.suffix('.tar.gz')
+		test/f_archive.fullpath.endswith('.tar.gz') == True
+		f_test_archive = f.prefix('test_')
+		test/f_test_archive.identity.startswith('test_') == True
