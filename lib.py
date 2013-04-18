@@ -13,6 +13,7 @@ import importlib
 import shutil
 import tempfile
 import contextlib
+import collections
 import rhythm.lib
 import stat
 from . import abstract
@@ -169,6 +170,12 @@ class File(abstract.Route):
 			if exists(x.fullpath):
 				return x
 			x = x.container
+
+	def exists(self, exists = os.path.exists):
+		"""
+		Return the part of the File route that actually exists on the File system.
+		"""
+		return exists(self.fullpath)
 
 	def void(self, rmtree = shutil.rmtree):
 		"""
@@ -432,21 +439,48 @@ class Import(abstract.Route):
 		"""
 		packages = []
 		modules = []
-		prefix = package.__name__
 
 		if self.is_package:
+			prefix = self.fullname
+
 			# only packages have subnodes
-			for (importer, name, ispkg) in iter_modules(package.__path__):
+			for (importer, name, ispkg) in iter_modules(self.module().__path__):
 				path = '.'.join((prefix, name))
+				ir = self.__class__.from_fullname(path)
 				if ispkg:
-					packages.append(path)
+					packages.append(ir)
 				else:
-					modules.append(path)
+					modules.append(ir)
 
 		return packages, modules
+
+	def tree(self, deque = collections.deque):
+		"""
+		tree()
+
+		Return a package full tree.
+		"""
+		pkgs, mods = self.subnodes()
+		tree = {}
+		pkgsq = deque(pkgs)
+		while pkgsq:
+			pkg = pkgsq.popleft()
+			sp, pm = pkg.subnodes()
+
+			# extend output
+			pkgs.extend(sp)
+			mods.extend(pm)
+
+			# process subpackages
+			pkgsq.extend(sp)
+		return pkgs, mods
 
 	def file(self, from_path = File.from_path):
 		"""
 		Get the :py:class:`File` instance pointing to the module.
 		"""
-		return from_path(self.loader.path)
+		path = getattr(self.loader, 'path', None)
+		if path is None:
+			# err NamespaceLoader
+			path = self.loader._path._path
+		return from_path(path)
