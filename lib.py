@@ -444,13 +444,15 @@ class Import(abstract.Route):
 			prefix = self.fullname
 
 			# only packages have subnodes
-			for (importer, name, ispkg) in iter_modules(self.module().__path__):
-				path = '.'.join((prefix, name))
-				ir = self.__class__.from_fullname(path)
-				if ispkg:
-					packages.append(ir)
-				else:
-					modules.append(ir)
+			module = self.module()
+			if module is not None:
+				for (importer, name, ispkg) in iter_modules(module.__path__):
+					path = '.'.join((prefix, name))
+					ir = self.__class__.from_fullname(path)
+					if ispkg:
+						packages.append(ir)
+					else:
+						modules.append(ir)
 
 		return packages, modules
 
