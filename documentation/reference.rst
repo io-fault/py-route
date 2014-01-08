@@ -7,24 +7,24 @@ provided by `routes`. It refrains from discussing how the parts might be used
 in a wider scope; the :doc:`usage` document should be read for such
 information.
 
-:mod:`routes.lib`
-=================
+:mod:`fault.routes.lib`
+=======================
 
-.. automodule:: routes.lib
+.. automodule:: fault.routes.lib
     :show-inheritance:
     :members:
 
-:mod:`routes.abstract`
-======================
+:mod:`fault.routes.abstract`
+============================
 
-.. automodule:: routes.abstract
+.. automodule:: fault.routes.abstract
     :show-inheritance:
     :members:
 
-:mod:`routes`
-=============
+:mod:`fault.routes`
+===================
 
-.. automodule:: routes
+.. automodule:: fault.routes
     :show-inheritance:
     :members:
 
