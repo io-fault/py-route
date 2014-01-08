@@ -14,9 +14,10 @@ import shutil
 import tempfile
 import contextlib
 import collections
-import rhythm.lib
 import stat
 from . import abstract
+
+from ..rhythm import lib as rhythmlib
 
 class File(abstract.Route):
 	"""
@@ -203,7 +204,7 @@ class File(abstract.Route):
 				pass
 		return False
 
-	def last_modified(self, stat = os.stat, unix = rhythm.lib.unix):
+	def last_modified(self, stat = os.stat, unix = rhythmlib.unix):
 		return unix(stat(self.fullpath).st_mtime)
 
 	def init(self, type, mkdir = os.mkdir, exists = os.path.exists):
@@ -368,7 +369,7 @@ class Import(abstract.Route):
 				return x
 			x = x.container
 
-	def last_modified(self, stat = os.stat, unix = rhythm.lib.unix):
+	def last_modified(self, stat = os.stat, unix = rhythmlib.unix):
 		"""
 		Return the modification time of the module in a rhythm Timestamp.
 		"""
