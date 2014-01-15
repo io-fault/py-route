@@ -15,6 +15,11 @@ def test_equality(test):
 	test/ir != fr
 
 def test_Import(test):
+	# ..bit strange when dealing with nested project packages
+	fullpath = __package__.split('.')
+	localpath = fullpath[fullpath.index('routes'):]
+	local = '.'.join(fullpath[:fullpath.index('routes')+1])
+
 	# package.test
 	r = lib.Import.from_fullname(__package__)
 	# datum reduction
@@ -30,13 +35,16 @@ def test_Import(test):
 	# stack
 	r = lib.Import.from_fullname(__package__)
 	modules = r.stack()
-	test/len(modules) == 2
+	test/len(modules) >= len(fullpath)
+
 	test/modules[0] == r.module() # most "significant" module first
-	test/modules[1] == r.container.module()
+	for x in modules:
+		test/x == r.module()
+		r = r.container
 
 	# bottom
 	r = lib.Import.from_fullname(__package__)
-	test/r.bottom() == lib.Import.from_fullname('routes')
+	test/r.bottom() == lib.Import.from_fullname(local)
 
 	# project
 	from .. import project
@@ -93,3 +101,7 @@ def test_File_basename_manipulations(test):
 		test/f_archive.fullpath.endswith('.tar.gz') == True
 		f_test_archive = f.prefix('test_')
 		test/f_test_archive.identity.startswith('test_') == True
+
+if __name__ == '__main__':
+	import sys; from ...dev import libtest
+	libtest.execute(sys.modules[__name__])

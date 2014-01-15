@@ -385,15 +385,13 @@ class Import(abstract.Route):
 			if attr in x.__dict__:
 				yield (x, x.__dict__[attr])
 
-	def bottom(self, name = '__pkg_bottom__'):
+	def bottom(self, valids = (True, False), name = '__pkg_bottom__'):
 		"""
 		Return a Route to the package module containing an attribute named
-		'__pkg_bottom__' whose value is :py:obj:`True`.
-
-		Packages with a fair amount of depth can use this to identify package groups.
+		'__pkg_bottom__' whose value is :py:obj:`True` or :py:obj:`False`.
 		"""
 		for (mod, value) in self.scan(name):
-			if value == True:
+			if value in valids:
 				return self.__class__.from_fullname(mod.__name__)
 		return None # no bottom
 
