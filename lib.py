@@ -111,7 +111,7 @@ class File(abstract.Route):
 
 	def prefix(self, s):
 		"""
-		Modify the name of the file adding the given suffix.
+		Modify the name of the file adding the given prefix.
 
 		Returns a new Route.
 		"""
@@ -178,18 +178,29 @@ class File(abstract.Route):
 		"""
 		return exists(self.fullpath)
 
-	def void(self, rmtree = shutil.rmtree):
+	def size(self, listdir = os.listdir):
 		"""
-		void()
+		Return whether or not the file or directory has contents.
+		"""
+		if not self.exists():
+			return None
 
-		Remove the entire tree that this Route points to.
-		No file will survive. Unless it's not owned by you.
+		if self.is_container():
+			return len(listdir(self.fullpath))
+		else:
+			with self.open(mode='rb') as f:
+				f.seek(0, 2)
+				return f.tell()
+
+	def void(self, rmtree = shutil.rmtree, remove = os.remove):
 		"""
-		try:
+		Remove the entire tree that this Route points to.
+		No file will survive. Unless it's not owned by the user.
+		"""
+		if self.is_container():
 			rmtree(self.fullpath)
-			return True
-		except OSError:
-			return False
+		else:
+			remove(self.fullpath)
 
 	def replace(self, route):
 		"""
@@ -482,6 +493,6 @@ class Import(abstract.Route):
 		"""
 		path = getattr(self.loader, 'path', None)
 		if path is None:
-			# err NamespaceLoader
+			# NamespaceLoader seems inconsistent here.
 			path = self.loader._path._path
 		return from_path(path)

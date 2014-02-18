@@ -94,6 +94,21 @@ def test_File_void(test):
 		test/f.is_container() == False
 		test/f.real() != f
 
+def test_File_size(test):
+	r = lib.File.from_path(__file__)
+
+	d = r.container / 'test-size-info'
+	test/d.size() == 4
+
+	f1 = d / 'one'
+	f2 = d / 'two'
+	f3 = d / 'three'
+	f4 = d / 'four'
+	test/f1.size() == 1
+	test/f2.size() == 2
+	test/f3.size() == 3
+	test/f4.size() == 4
+
 def test_File_basename_manipulations(test):
 	with lib.File.temporary() as t:
 		f = t/'doesnotexist'
