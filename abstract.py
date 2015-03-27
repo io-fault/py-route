@@ -14,15 +14,15 @@ class Route(metaclass = abc.ABCMeta):
 		"""
 
 	@abc.abstractproperty
-	def crumbs(self):
+	def points(self):
 		"""
-		Tuple of *relative* nodes in the Route. Crumbs are hashable identifiers used to
+		Tuple of *relative* nodes in the Route. Points are hashable identifiers used to
 		access the :term:`selection`.
 		"""
 
-	def __init__(self, datum, crumbs):
+	def __init__(self, datum, points):
 		self.datum = datum
-		self.crumbs = crumbs
+		self.points = points
 
 	@abc.abstractproperty
 	def __str__(self):
@@ -32,34 +32,34 @@ class Route(metaclass = abc.ABCMeta):
 		"""
 
 	def __hash__(self):
-		return hash((self.datum, self.crumbs))
+		return hash((self.datum, self.points))
 
 	def __repr__(self):
-		return "{0}({1}, {2})".format(self.__qualname__, repr(self.datum), repr(self.crumbs))
+		return "{0}({1}, {2})".format(self.__qualname__, repr(self.datum), repr(self.points))
 
 	def __str__(self):
-		return '/'.join(self.crumbs)
+		return '/'.join(self.points)
 
 	def __eq__(self, ob, isinstance = isinstance):
 		# Datums can be None, so that's where the recursion stops.
 		return (self.absolute == ob.absolute and isinstance(ob, self.__class__))
 
 	def __contains__(self, abs):
-		return abs.crumbs[:len(self.crumbs)] == self.crumbs
+		return abs.points[:len(self.points)] == self.points
 
 	def __getitem__(self, req):
 		# for select slices of routes
-		return self.__class__(self.datum, self.crumbs[req])
+		return self.__class__(self.datum, self.points[req])
 
 	def __add__(self, tail):
 		if tail.datum is None:
-			return tail.__class__(self, tail.crumbs)
+			return tail.__class__(self, tail.points)
 		else:
 			# replace the datum
-			return tail.__class__(self, tail.absolute.crumbs)
+			return tail.__class__(self, tail.absolute.points)
 
 	def __truediv__(self, next_point):
-		return self.__class__(self.datum, self.crumbs + (next_point,))
+		return self.__class__(self.datum, self.points + (next_point,))
 
 	def __invert__(self):
 		"""
@@ -67,17 +67,17 @@ class Route(metaclass = abc.ABCMeta):
 		"""
 		if self.datum is None:
 			return self
-		return self.__class__(self.datum.datum, self.datum.crumbs + self.crumbs)
+		return self.__class__(self.datum.datum, self.datum.points + self.points)
 
 	@property
 	def absolute(self):
 		"""
-		The absolute sequence of crumbs.
+		The absolute sequence of points.
 		"""
-		r = self.crumbs
+		r = self.points
 		x = self
 		while x.datum is not None:
-			r = x.datum.crumbs + r
+			r = x.datum.points + r
 			x = x.datum
 		return r
 
@@ -86,7 +86,7 @@ class Route(metaclass = abc.ABCMeta):
 		"""
 		The identity of the node relative to its container. (Head)
 		"""
-		return self.crumbs[-1]
+		return self.points[-1]
 
 	@property
 	def local(self):
@@ -96,14 +96,14 @@ class Route(metaclass = abc.ABCMeta):
 		"""
 		if self.is_container():
 			return self
-		return self.__class__(self.crumbs[:-1])
+		return self.__class__(self.points[:-1])
 
 	@property
 	def root(self):
 		"""
 		The root Route with respect to the Route's datum.
 		"""
-		return self.__class__(self.datum, self.crumbs[0:1])
+		return self.__class__(self.datum, self.points[0:1])
 
 	@property
 	def container(self):
@@ -111,7 +111,7 @@ class Route(metaclass = abc.ABCMeta):
 		Return a Route to the outer Route; this merely removes the last crumb in the
 		sequence.
 		"""
-		return self.__class__(self.datum, self.crumbs[:-1])
+		return self.__class__(self.datum, self.points[:-1])
 
 	@abc.abstractmethod
 	def is_container(self):

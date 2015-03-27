@@ -2,7 +2,7 @@
 
 #: Project name.
 name = 'routes'
-abstract = 'filesystem and module manipulation tools'
+abstract = 'filesystem path and module path manipulation tools'
 icon = '🚏'
 
 #: IRI based project identity. (project homepage)

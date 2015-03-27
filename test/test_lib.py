@@ -8,10 +8,10 @@ def test_equality(test):
 	# domain to match Routes with equal routing that exist in a distinct domain
 	ir = lib.Import(None, ('foo',))
 	fr = lib.File(None, ('foo',))
-	test/ir.crumbs == fr.crumbs
+	test/ir.points == fr.points
 	test/ir.datum == fr.datum
 
-	# crumbs and datum are identical, but the type needs to be the same as well.
+	# points and datum are identical, but the type needs to be the same as well.
 	test/ir != fr
 
 def test_Import(test):
@@ -118,5 +118,5 @@ def test_File_basename_manipulations(test):
 		test/f_test_archive.identity.startswith('test_') == True
 
 if __name__ == '__main__':
-	import sys; from ...dev import libtest
+	import sys; from ...development import libtest
 	libtest.execute(sys.modules[__name__])

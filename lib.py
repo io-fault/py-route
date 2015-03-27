@@ -15,15 +15,16 @@ import tempfile
 import contextlib
 import collections
 import stat
+
 from . import abstract
 
-from ..rhythm import lib as rhythmlib
+from ..chronometry import lib as time
 
 class File(abstract.Route):
 	"""
 	Route subclass for file system objects.
 	"""
-	__slots__ = ('datum', 'crumbs',)
+	__slots__ = ('datum', 'points',)
 
 	@classmethod
 	def from_absolute(typ, s, sep = os.path.sep):
@@ -84,15 +85,15 @@ class File(abstract.Route):
 		if self.datum is not None:
 			# let the outermost datum handle the root /, if any
 			prefix = self.datum.fullpath
-			if not self.crumbs:
+			if not self.points:
 				return prefix
 		else:
-			if not self.crumbs:
+			if not self.points:
 				return sep
 			# Covers the case for a leading '/'
 			prefix = ''
 
-		rpath = sep.join(self.crumbs)
+		rpath = sep.join(self.points)
 		return sep.join((prefix, rpath))
 
 	@property
@@ -105,7 +106,7 @@ class File(abstract.Route):
 
 		Returns a new Route.
 		"""
-		*prefix, basename = self.crumbs
+		*prefix, basename = self.points
 		prefix.append(basename + s)
 		return self.__class__(self.datum, tuple(prefix))
 
@@ -115,7 +116,7 @@ class File(abstract.Route):
 
 		Returns a new Route.
 		"""
-		*prefix, basename = self.crumbs
+		*prefix, basename = self.points
 		prefix.append(s + basename)
 		return self.__class__(self.datum, tuple(prefix))
 
@@ -167,7 +168,7 @@ class File(abstract.Route):
 		Return the part of the File route that actually exists on the File system.
 		"""
 		x = self.__class__.from_absolute(self.fullpath)
-		while x.crumbs:
+		while x.points:
 			if exists(x.fullpath):
 				return x
 			x = x.container
@@ -199,7 +200,7 @@ class File(abstract.Route):
 		"""
 		if self.is_container():
 			rmtree(self.fullpath)
-		else:
+		elif self.exists():
 			remove(self.fullpath)
 
 	def replace(self, route):
@@ -215,7 +216,7 @@ class File(abstract.Route):
 				pass
 		return False
 
-	def last_modified(self, stat = os.stat, unix = rhythmlib.unix):
+	def last_modified(self, stat = os.stat, unix = time.unix):
 		return unix(stat(self.fullpath).st_mtime)
 
 	def init(self, type, mkdir = os.mkdir, exists = os.path.exists):
@@ -275,7 +276,7 @@ class Import(abstract.Route):
 	"""
 	Route for Python packages and modules.
 	"""
-	__slots__ = ('datum', 'crumbs',)
+	__slots__ = ('datum', 'points',)
 
 	@classmethod
 	def from_context(typ):
@@ -296,12 +297,12 @@ class Import(abstract.Route):
 		"""
 		Given an absolute module path, return a Pointer instance to that path.
 		"""
-		return typ.from_crumbs(None, *s.split('.'))
+		return typ.from_points(None, *s.split('.'))
 
 	@classmethod
-	def from_crumbs(typ, datum, *crumbs):
+	def from_points(typ, datum, *points):
 		rob = object.__new__(typ)
-		rob.__init__(datum, crumbs)
+		rob.__init__(datum, points)
 		return rob
 
 	def __str__(self):
@@ -314,10 +315,10 @@ class Import(abstract.Route):
 		"""
 		Whether or not the Path contains the given Pointer.
 		"""
-		return abs.crumbs[:len(self.crumbs)] == self.crumbs
+		return abs.points[:len(self.points)] == self.points
 
 	def __getitem__(self, req):
-		return self.__class__(self.datum, self.crumbs[req])
+		return self.__class__(self.datum, self.points[req])
 
 	@property
 	def fullname(self):
@@ -325,14 +326,14 @@ class Import(abstract.Route):
 		Return the absolute path of the Pointer.
 		"""
 		# accommodate for Nones
-		return '.'.join(self.crumbs)
+		return '.'.join(self.points)
 
 	@property
 	def basename(self):
 		"""
 		The module's name relative to its package.
 		"""
-		return self.crumbs[-1]
+		return self.points[-1]
 
 	@property
 	def package(self):
@@ -342,18 +343,18 @@ class Import(abstract.Route):
 		"""
 		if self.is_container():
 			return self
-		return self.__class__(self.datum, self.crumbs[:-1])
+		return self.__class__(self.datum, self.points[:-1])
 
 	@property
 	def root(self):
-		return self.__class__(self.datum, self.crumbs[0:1])
+		return self.__class__(self.datum, self.points[0:1])
 
 	@property
 	def container(self):
 		"""
 		Return a Pointer to the containing package. (parent package module)
 		"""
-		return self.__class__(self.datum, self.crumbs[:-1])
+		return self.__class__(self.datum, self.points[:-1])
 
 	@property
 	def loader(self, find_loader = pkgutil.find_loader):
@@ -375,12 +376,12 @@ class Import(abstract.Route):
 		None if no parts are real.
 		"""
 		x = self
-		while x.crumbs:
+		while x.points:
 			if find_loader(x.fullname):
 				return x
 			x = x.container
 
-	def last_modified(self, stat = os.stat, unix = rhythmlib.unix):
+	def last_modified(self, stat = os.stat, unix = time.unix):
 		"""
 		Return the modification time of the module in a rhythm Timestamp.
 		"""
@@ -433,7 +434,7 @@ class Import(abstract.Route):
 		"""
 		x = self
 		r = []
-		while x.crumbs:
+		while x.points:
 			mod = x.module()
 			if mod is None:
 				return None
@@ -456,7 +457,8 @@ class Import(abstract.Route):
 			# only packages have subnodes
 			module = self.module()
 			if module is not None:
-				for (importer, name, ispkg) in iter_modules(module.__path__):
+				path = getattr(module, '__path__', None)
+				for (importer, name, ispkg) in iter_modules(path) if path is not None else ():
 					path = '.'.join((prefix, name))
 					ir = self.__class__.from_fullname(path)
 					if ispkg:
