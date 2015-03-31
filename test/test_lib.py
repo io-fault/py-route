@@ -1,7 +1,7 @@
 import os
 import sys
 from .. import abstract
-from .. import lib
+from .. import library as lib
 
 def test_equality(test):
 	# routes are rather abstract, but we dont want Routes for a given

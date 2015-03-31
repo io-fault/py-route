@@ -18,7 +18,7 @@ import stat
 
 from . import abstract
 
-from ..chronometry import lib as time
+from ..chronometry import library as time
 
 class File(abstract.Route):
 	"""
