@@ -1,6 +1,5 @@
 import os
 import sys
-from .. import abstract
 from .. import library as lib
 
 def test_equality(test):
@@ -75,6 +74,8 @@ def test_File(test):
 	# tail
 	end = lib.File.from_absolute('foo')
 	test/(rd + end).fullpath == os.path.join(dir, 'foo')
+
+	test/lib.File.from_absolute('/foo/bar.tar.gz').extension == 'gz'
 
 def test_File_temporary(test):
 	path = None

@@ -16,11 +16,81 @@ import contextlib
 import collections
 import stat
 
-from . import abstract
-
 from ..chronometry import library as time
 
-class File(abstract.Route):
+#@context.interface()
+class Route(object):
+	def __init__(self, datum, points):
+		self.datum = datum
+		self.points = points
+
+	def __hash__(self):
+		return hash(self.absolute)
+
+	def __eq__(self, ob, isinstance = isinstance):
+		# Datums can be None, so that's where the recursion stops.
+		return (self.absolute == ob.absolute and isinstance(ob, self.__class__))
+
+	def __contains__(self, abs):
+		return abs.points[:len(self.points)] == self.points
+
+	def __getitem__(self, req):
+		# for select slices of routes
+		return self.__class__(self.datum, self.points[req])
+
+	def __add__(self, tail):
+		if tail.datum is None:
+			return tail.__class__(self, tail.points)
+		else:
+			# replace the datum
+			return tail.__class__(self, tail.absolute.points)
+
+	def __truediv__(self, next_point):
+		return self.__class__(self.datum, self.points + (next_point,))
+
+	def __invert__(self):
+		"""
+		Consume one datum level into a new Route.
+		"""
+		if self.datum is None:
+			return self
+		return self.__class__(self.datum.datum, self.datum.points + self.points)
+
+	@property
+	def absolute(self):
+		"""
+		The absolute sequence of points.
+		"""
+		r = self.points
+		x = self
+		while x.datum is not None:
+			r = x.datum.points + r
+			x = x.datum
+		return r
+
+	@property
+	def identity(self):
+		"""
+		The identity of the node relative to its container. (Head)
+		"""
+		return self.points[-1]
+
+	@property
+	def root(self):
+		"""
+		The root Route with respect to the Route's datum.
+		"""
+		return self.__class__(self.datum, self.points[0:1])
+
+	@property
+	def container(self):
+		"""
+		Return a Route to the outer Route; this merely removes the last crumb in the
+		sequence.
+		"""
+		return self.__class__(self.datum, self.points[:-1])
+
+class File(Route):
 	"""
 	Route subclass for file system objects.
 	"""
@@ -68,7 +138,7 @@ class File(abstract.Route):
 	@classmethod
 	def which(typ, exe, dirname = os.path.dirname):
 		"""
-		Return a new Route the executable found by which.
+		Return a new Route to the executable found by which.
 		"""
 		rp = shutil.which(exe)
 		dn = dirname(rp)
@@ -82,6 +152,9 @@ class File(abstract.Route):
 
 	@property
 	def fullpath(self, sep = os.path.sep):
+		"""
+		Returns the full filesystem path designated by the route.
+		"""
 		if self.datum is not None:
 			# let the outermost datum handle the root /, if any
 			prefix = self.datum.fullpath
@@ -98,6 +171,10 @@ class File(abstract.Route):
 
 	@property
 	def bytespath(self, encoding = sys.getfilesystemencoding()):
+		"""
+		Returns the full filesystem path designated by the route as a @bytes object
+		returned by encoding the @fullpath in @sys.getfilesystemencoding with 'surrogateescape'.
+		"""
 		return self.fullpath.encode(encoding, "surrogateescape")
 
 	def suffix(self, s):
@@ -119,6 +196,17 @@ class File(abstract.Route):
 		*prefix, basename = self.points
 		prefix.append(s + basename)
 		return self.__class__(self.datum, tuple(prefix))
+
+	@property
+	def extension(self):
+		"""
+		Return the dot-extension of the file path.
+
+		Given a route to a file with a '.' in the final point, return the remainder of
+		the string after the '.'. Dot-extensions are often a useful indicator for the
+		consistency of the file's content.
+		"""
+		return self.identity.rsplit('.', 1)[-1]
 
 	_type_map = {
 			stat.S_IFIFO: 'pipe',
@@ -272,7 +360,7 @@ class File(abstract.Route):
 		finally:
 			pass
 
-class Import(abstract.Route):
+class Import(Route):
 	"""
 	Route for Python packages and modules.
 	"""
@@ -424,7 +512,7 @@ class Import(abstract.Route):
 		if ld is None:
 			# module does not exist
 			return None
-		return ld.load_module(fn)
+		return import_module(fn)
 
 	def stack(self):
 		"""
