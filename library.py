@@ -18,11 +18,21 @@ import stat
 
 from ..chronometry import library as time
 
-#@context.interface()
 class Route(object):
+
 	def __init__(self, datum, points):
 		self.datum = datum
 		self.points = points
+
+	def rebase(self):
+		"""
+		Return a new equivalent instance with a datum depth of 1 so
+		that the new Route's datum contains all the points of the
+		original Route.
+		"""
+
+		datum = self.__class__(None, self.absolute)
+		return self.__class__(datum, ())
 
 	def __hash__(self):
 		return hash(self.absolute)
@@ -52,6 +62,7 @@ class Route(object):
 		"""
 		Consume one datum level into a new Route.
 		"""
+
 		if self.datum is None:
 			return self
 		return self.__class__(self.datum.datum, self.datum.points + self.points)
@@ -73,7 +84,10 @@ class Route(object):
 		"""
 		The identity of the node relative to its container. (Head)
 		"""
-		return self.points[-1]
+		if self.points:
+			return self.points[-1]
+		else:
+			return self.datum.identity
 
 	@property
 	def root(self):
@@ -88,12 +102,16 @@ class Route(object):
 		Return a Route to the outer Route; this merely removes the last crumb in the
 		sequence.
 		"""
-		return self.__class__(self.datum, self.points[:-1])
+		if self.points:
+			return self.__class__(self.datum, self.points[:-1])
+		else:
+			return self.__class__(None, self.absolute[:-1])
 
 class File(Route):
 	"""
 	Route subclass for file system objects.
 	"""
+
 	__slots__ = ('datum', 'points',)
 
 	@classmethod
@@ -107,31 +125,39 @@ class File(Route):
 
 		The returned Route's `datum` is the HOME path.
 		"""
+
 		return typ(typ.from_absolute(os.environ['HOME']), ())
 
 	@classmethod
-	def cwd(typ, getcwd = os.getcwd):
+	def from_cwd(typ, getcwd = os.getcwd):
 		"""
 		Return a new Route to the current working directory.
 
 		The returned Route's `datum` is the current working directory path.
 		"""
+
 		return typ(typ.from_absolute(getcwd()), ())
 
 	@classmethod
-	def from_path(typ, s, realpath = os.path.realpath, dirname = os.path.dirname):
+	def from_path(typ, string, realpath = os.path.realpath, dirname = os.path.dirname):
 		"""
-		Return a new Route to the current working directory.
+		Return a new Route pointing to the file referenced by &string;
+		where string is a relative path that will be resolved into a real path.
 
-		The returned Route's `datum` is the current working directory path.
+		The returned Route's `datum` is the parent directory of path and the
+		basename is the only point.
 		"""
+
 		rp = realpath(s)
 		dn = dirname(rp)
+
 		return typ(typ.from_absolute(dn), (rp[len(dn):],))
 
 	@classmethod
 	@contextlib.contextmanager
 	def temporary(typ):
+		"Create a temporary directory at the route using a context manager."
+
 		with tempfile.TemporaryDirectory() as d:
 			yield typ(typ.from_absolute(d), ())
 
@@ -140,8 +166,10 @@ class File(Route):
 		"""
 		Return a new Route to the executable found by which.
 		"""
+
 		rp = shutil.which(exe)
 		dn = dirname(rp)
+
 		return typ(typ.from_absolute(dn), (rp[len(dn)+1:],))
 
 	def __repr__(self):
@@ -155,6 +183,7 @@ class File(Route):
 		"""
 		Returns the full filesystem path designated by the route.
 		"""
+
 		if self.datum is not None:
 			# let the outermost datum handle the root /, if any
 			prefix = self.datum.fullpath
@@ -167,6 +196,7 @@ class File(Route):
 			prefix = ''
 
 		rpath = sep.join(self.points)
+
 		return sep.join((prefix, rpath))
 
 	@property
@@ -175,6 +205,7 @@ class File(Route):
 		Returns the full filesystem path designated by the route as a @bytes object
 		returned by encoding the @fullpath in @sys.getfilesystemencoding with 'surrogateescape'.
 		"""
+
 		return self.fullpath.encode(encoding, "surrogateescape")
 
 	def suffix(self, s):
@@ -183,8 +214,10 @@ class File(Route):
 
 		Returns a new Route.
 		"""
+
 		*prefix, basename = self.points
 		prefix.append(basename + s)
+
 		return self.__class__(self.datum, tuple(prefix))
 
 	def prefix(self, s):
@@ -193,8 +226,10 @@ class File(Route):
 
 		Returns a new Route.
 		"""
+
 		*prefix, basename = self.points
 		prefix.append(s + basename)
+
 		return self.__class__(self.datum, tuple(prefix))
 
 	@property
@@ -206,6 +241,7 @@ class File(Route):
 		the string after the '.'. Dot-extensions are often a useful indicator for the
 		consistency of the file's content.
 		"""
+
 		return self.identity.rsplit('.', 1)[-1]
 
 	_type_map = {
@@ -217,9 +253,18 @@ class File(Route):
 			stat.S_IFBLK: 'device',
 			stat.S_IFCHR: 'device',
 	}
+
 	def type(self, ifmt = stat.S_IFMT, stat = os.stat, type_map = _type_map):
+		"The kind of node the route points to."
+
 		s = stat(self.fullpath)
 		return type_map[ifmt(s.st_mode)]
+
+	def executable(self, get_stat=os.stat, mask=stat.S_IXUSR|stat.S_IXGRP|stat.S_IXOTH):
+		"Whether the node is considered to be an executable."
+
+		mode = get_stat(self.fullpath).st_mode
+		return (mode & mask) != 0
 
 	def is_container(self, isdir = os.path.isdir):
 		return isdir(self.fullpath)
@@ -232,6 +277,7 @@ class File(Route):
 
 		If the Route does not point to a directory, a pair of empty lists will be returned.
 		"""
+
 		path = self.fullpath
 
 		try:
@@ -249,12 +295,14 @@ class File(Route):
 				directories.append(sub)
 			else:
 				files.append(sub)
+
 		return directories, files
 
 	def real(self, exists = os.path.exists):
 		"""
 		Return the part of the File route that actually exists on the File system.
 		"""
+
 		x = self.__class__.from_absolute(self.fullpath)
 		while x.points:
 			if exists(x.fullpath):
@@ -286,10 +334,12 @@ class File(Route):
 		Remove the entire tree that this Route points to.
 		No file will survive. Unless it's not owned by the user.
 		"""
-		if self.is_container():
-			rmtree(self.fullpath)
-		elif self.exists():
-			remove(self.fullpath)
+
+		if self.exists():
+			if self.is_container():
+				rmtree(self.fullpath)
+			else:
+				remove(self.fullpath)
 
 	def replace(self, route):
 		"""
@@ -317,8 +367,9 @@ class File(Route):
 
 		If a node of any type already exists at this route, nothing happens.
 
-		`type` is one of: :py:obj:`'file'`, :py:obj:`'container'`, :py:obj:`'pipe'`.
+		`type` is one of: :py:obj:`'file'`, :py:obj:`'directory'`, :py:obj:`'pipe'`.
 		"""
+
 		fp = self.fullpath
 		if exists(fp):
 			return
@@ -351,7 +402,9 @@ class File(Route):
 		If the file doesn't exist, create it; if the directories
 		leading up to the file don't exist, create the directories too.
 		"""
+
 		f = None
+
 		try:
 			self.init('file')
 			f = open(self.fullpath, *args, **kw)
@@ -360,10 +413,25 @@ class File(Route):
 		finally:
 			pass
 
+	@contextlib.contextmanager
+	def cwd(self, chdir=os.chdir, getcwd=os.getcwd):
+		"""
+		Use the &File route as the current working directory within the context.
+		On exit, restore the current working directory to that the operating system
+		reported.
+		"""
+
+		cwd = getcwd()
+
+		try:
+			chdir(str(self))
+			yield None
+		finally:
+			chdir(cwd)
+
 class Import(Route):
-	"""
-	Route for Python packages and modules.
-	"""
+	"Route for Python packages and modules."
+
 	__slots__ = ('datum', 'points',)
 
 	@classmethod
@@ -410,17 +478,13 @@ class Import(Route):
 
 	@property
 	def fullname(self):
-		"""
-		Return the absolute path of the Pointer.
-		"""
+		"Return the absolute path of the module Route; dot separated module names."
 		# accommodate for Nones
 		return '.'.join(self.points)
 
 	@property
 	def basename(self):
-		"""
-		The module's name relative to its package.
-		"""
+		"The module's name relative to its package; node identifier used to refer to the module."
 		return self.points[-1]
 
 	@property
@@ -429,8 +493,10 @@ class Import(Route):
 		Return a Pointer to the module's package.
 		If the Pointer is referencing a package, return the object.
 		"""
+
 		if self.is_container():
 			return self
+
 		return self.__class__(self.datum, self.points[:-1])
 
 	@property
@@ -445,8 +511,15 @@ class Import(Route):
 		return self.__class__(self.datum, self.points[:-1])
 
 	@property
-	def loader(self, find_loader = pkgutil.find_loader):
-		return find_loader(self.fullname)
+	def loader(self):
+		"The loader of the module."
+
+		return self.spec().loader
+
+	def spec(self, find_spec = importlib.util.find_spec):
+		"The spec for loading the module."
+
+		return find_spec(self.fullname)
 
 	def is_container(self, find_loader = pkgutil.find_loader):
 		"""
@@ -471,13 +544,16 @@ class Import(Route):
 
 	def last_modified(self, stat = os.stat, unix = time.unix):
 		"""
-		Return the modification time of the module in a rhythm Timestamp.
+		Return the modification time of the module's file as a chronometry Timestamp.
+		For fault.development extension modules, this returns the modification
+		time of the source (src) directory inside the containing package module.
 		"""
+		# XXX: handle fault.development extension modules
 		return unix(stat(self.module().__file__).st_mtime)
 
 	def scan(self, attr):
 		"""
-		Scan the :py:meth:`stack` of modules for the given attribute returning a pair
+		Scan the &.stack of modules for the given attribute returning a pair
 		containing the module the object at that attribute.
 		"""
 		modules = self.stack()
@@ -488,7 +564,7 @@ class Import(Route):
 	def bottom(self, valids = (True, False), name = '__pkg_bottom__'):
 		"""
 		Return a Route to the package module containing an attribute named
-		'__pkg_bottom__' whose value is :py:obj:`True` or :py:obj:`False`.
+		'__pkg_bottom__' whose value is &True or &False.
 		"""
 		for (mod, value) in self.scan(name):
 			if value in valids:
@@ -496,17 +572,13 @@ class Import(Route):
 		return None # no bottom
 
 	def project(self):
-		"""
-		Return the "project" module of the :py:meth:`bottom` package.
-		"""
+		"Return the 'project' module of the &.bottom package."
 		bottom = self.bottom()
 		if bottom is not None:
 			return (bottom/'project').module()
 
 	def module(self, import_module = importlib.import_module):
-		"""
-		Return the module that is being referred to by the path.
-		"""
+		"Return the module that is being referred to by the path."
 		fn = self.fullname
 		ld = self.loader
 		if ld is None:
@@ -531,11 +603,7 @@ class Import(Route):
 		return r
 
 	def subnodes(self, iter_modules = pkgutil.iter_modules):
-		"""
-		subnodes()
-
-		Return two pairs of sequences containing pointers to the subnodes of the Pointer.
-		"""
+		"Return a pairs of sequences containing routes to the subnodes of the route."
 		packages = []
 		modules = []
 
@@ -557,14 +625,11 @@ class Import(Route):
 		return packages, modules
 
 	def tree(self, deque = collections.deque):
-		"""
-		tree()
-
-		Return a package full tree.
-		"""
+		"Return a package's full tree."
 		pkgs, mods = self.subnodes()
 		tree = {}
 		pkgsq = deque(pkgs)
+
 		while pkgsq:
 			pkg = pkgsq.popleft()
 			sp, pm = pkg.subnodes()
@@ -578,9 +643,7 @@ class Import(Route):
 		return pkgs, mods
 
 	def file(self, from_path = File.from_path):
-		"""
-		Get the :py:class:`File` instance pointing to the module.
-		"""
+		"Get the &File instance pointing to the module's file."
 		path = getattr(self.loader, 'path', None)
 		if path is None:
 			# NamespaceLoader seems inconsistent here.

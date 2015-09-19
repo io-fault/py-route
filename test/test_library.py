@@ -118,6 +118,19 @@ def test_File_basename_manipulations(test):
 		f_test_archive = f.prefix('test_')
 		test/f_test_archive.identity.startswith('test_') == True
 
+def test_File_properties(test):
+	# executable
+	sysexe = lib.File.from_absolute(sys.executable)
+	test/sysexe.executable() == True
+	test/sysexe.type() == "file"
+
+	module = lib.File.from_absolute(__file__)
+	test/module.executable() == False
+	test/module.type() == "file"
+
+	moddir = module.container
+	test/moddir.type() == "directory"
+
 if __name__ == '__main__':
 	import sys; from ...development import libtest
 	libtest.execute(sys.modules[__name__])
