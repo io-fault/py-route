@@ -139,7 +139,7 @@ class File(Route):
 		return typ(typ.from_absolute(getcwd()), ())
 
 	@classmethod
-	def from_path(typ, string, realpath = os.path.realpath, dirname = os.path.dirname):
+	def from_path(typ, string, realpath=os.path.realpath, dirname=os.path.dirname):
 		"""
 		Return a new Route pointing to the file referenced by &string;
 		where string is a relative path that will be resolved into a real path.
@@ -148,7 +148,7 @@ class File(Route):
 		basename is the only point.
 		"""
 
-		rp = realpath(s)
+		rp = realpath(string)
 		dn = dirname(rp)
 
 		return typ(typ.from_absolute(dn), (rp[len(dn):],))
