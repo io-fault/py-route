@@ -19,6 +19,11 @@ import stat
 from ..chronometry import library as time
 
 class Route(object):
+	"""
+	Route base class.
+
+	Provides generic manipulation methods.
+	"""
 
 	def __init__(self, datum, points):
 		self.datum = datum
@@ -49,6 +54,7 @@ class Route(object):
 		return self.__class__(self.datum, self.points[req])
 
 	def __add__(self, tail):
+		"Add the two Routes together."
 		if tail.datum is None:
 			return tail.__class__(self, tail.points)
 		else:
@@ -57,6 +63,11 @@ class Route(object):
 
 	def __truediv__(self, next_point):
 		return self.__class__(self.datum, self.points + (next_point,))
+
+	def extend(self, extension):
+		"Extend the Route using the given sequence of points."
+
+		return self.__class__(self, tuple(extension))
 
 	def __invert__(self):
 		"""
@@ -151,7 +162,7 @@ class File(Route):
 		rp = realpath(string)
 		dn = dirname(rp)
 
-		return typ(typ.from_absolute(dn), (rp[len(dn):],))
+		return typ(typ.from_absolute(dn), (rp[len(dn)+1:],))
 
 	@classmethod
 	@contextlib.contextmanager
@@ -315,19 +326,24 @@ class File(Route):
 		"""
 		return exists(self.fullpath)
 
-	def size(self, listdir = os.listdir):
+	# XXX: size() using listdir to get a content count is probably too inefficient
+	def size(self, listdir=os.listdir, stat=os.stat):
 		"""
 		Return whether or not the file or directory has contents.
+
+		&None if there is no file at the route, number of nodes (files, directories, etc)
+		if a directory, and the number of bytes contained within the file if a regular file.
+
+		The file size is determined using &os.stat with follow_symlink=True.
 		"""
+
 		if not self.exists():
 			return None
 
 		if self.is_container():
 			return len(listdir(self.fullpath))
 		else:
-			with self.open(mode='rb') as f:
-				f.seek(0, 2)
-				return f.tell()
+			return stat(self.fullpath, follow_symlinks=True).st_size
 
 	def void(self, rmtree = shutil.rmtree, remove = os.remove):
 		"""
