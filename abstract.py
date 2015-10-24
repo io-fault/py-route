@@ -4,13 +4,13 @@ Route interface specifiation.
 import abc
 import collections.abc
 
-class Resource(metaclass = abc.ABCMeta):
+class Resource(metaclass=abc.ABCMeta):
 	"""
 	An arbitrary object or representation that a Route points to.
 	"""
 
 @collections.abc.Hashable.register
-class Route(metaclass = abc.ABCMeta):
+class Route(metaclass=abc.ABCMeta):
 	"""
 	An abstract path to a &Resource.
 	"""
@@ -139,8 +139,9 @@ class Point(metaclass=abc.ABCMeta):
 	"""
 	A point in an arbitrary hierarchy with respect to a configured perspective.
 	"""
+
 	@abc.abstractmethod
-	def rotate(self, perspective) -> Point:
+	def rotate(self, perspective):
 		"""
 		Construct a new Point at the same location using a different perspective.
 		Normally used to access a different set of properties, but directories and lineals
