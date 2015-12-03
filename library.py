@@ -1,9 +1,5 @@
 """
-Routes is a library for manipulating paths to arbitrary "things".
-The paths are normally routes to a File or Import, Python module.
-
-Routes have a dual purpose: point to a "thing", and interact with the "thing".
-The conflation is strictly for convenience.
+Route implementations for Python modules and local file systems.
 """
 import os
 import os.path
@@ -25,7 +21,7 @@ class Route(object):
 	Provides generic manipulation methods.
 	"""
 
-	def __init__(self, datum, points):
+	def __init__(self, datum:object, points:tuple):
 		self.datum = datum
 		self.points = points
 
@@ -42,16 +38,19 @@ class Route(object):
 	def __hash__(self):
 		return hash(self.absolute)
 
-	def __eq__(self, ob, isinstance = isinstance):
+	def __eq__(self, ob, isinstance=isinstance):
 		# Datums can be None, so that's where the recursion stops.
-		return (self.absolute == ob.absolute and isinstance(ob, self.__class__))
+		return (isinstance(ob, self.__class__) and self.absolute == ob.absolute)
 
 	def __contains__(self, abs):
 		return abs.points[:len(self.points)] == self.points
 
 	def __getitem__(self, req):
 		# for select slices of routes
-		return self.__class__(self.datum, self.points[req])
+		if isinstance(req, slice):
+			return self.__class__(self.datum, self.points[req])
+		else:
+			return self.__class__(self.datum, (self.points[req],))
 
 	def __add__(self, tail):
 		"Add the two Routes together."
@@ -62,7 +61,11 @@ class Route(object):
 			return tail.__class__(self, tail.absolute.points)
 
 	def __truediv__(self, next_point):
-		return self.__class__(self.datum, self.points + (next_point,))
+		try:
+			return self.__class__(self.datum, self.points + (next_point,))
+		except:
+			print(self.datum, self.points)
+			raise
 
 	def extend(self, extension):
 		"Extend the Route using the given sequence of points."
@@ -95,6 +98,7 @@ class Route(object):
 		"""
 		The identity of the node relative to its container. (Head)
 		"""
+
 		if self.points:
 			return self.points[-1]
 		else:
@@ -126,31 +130,31 @@ class File(Route):
 	__slots__ = ('datum', 'points',)
 
 	@classmethod
-	def from_absolute(typ, s, sep = os.path.sep):
-		return typ(None, tuple([x for x in s.split(sep) if x]))
+	def from_absolute(Class, s, sep = os.path.sep):
+		return Class(None, tuple([x for x in s.split(sep) if x]))
 
 	@classmethod
-	def home(typ):
+	def home(Class):
 		"""
 		Return a new Route to the "HOME" directory defined by the environment.
 
 		The returned Route's `datum` is the HOME path.
 		"""
 
-		return typ(typ.from_absolute(os.environ['HOME']), ())
+		return Class(Class.from_absolute(os.environ['HOME']), ())
 
 	@classmethod
-	def from_cwd(typ, getcwd = os.getcwd):
+	def from_cwd(Class, getcwd = os.getcwd):
 		"""
 		Return a new Route to the current working directory.
 
 		The returned Route's `datum` is the current working directory path.
 		"""
 
-		return typ(typ.from_absolute(getcwd()), ())
+		return Class(Class.from_absolute(getcwd()), ())
 
 	@classmethod
-	def from_path(typ, string, realpath=os.path.realpath, dirname=os.path.dirname):
+	def from_path(Class, string, realpath=os.path.realpath, dirname=os.path.dirname):
 		"""
 		Return a new Route pointing to the file referenced by &string;
 		where string is a relative path that will be resolved into a real path.
@@ -162,18 +166,18 @@ class File(Route):
 		rp = realpath(string)
 		dn = dirname(rp)
 
-		return typ(typ.from_absolute(dn), (rp[len(dn)+1:],))
+		return Class(Class.from_absolute(dn), (rp[len(dn)+1:],))
 
 	@classmethod
 	@contextlib.contextmanager
-	def temporary(typ):
+	def temporary(Class):
 		"Create a temporary directory at the route using a context manager."
 
 		with tempfile.TemporaryDirectory() as d:
-			yield typ(typ.from_absolute(d), ())
+			yield Class(Class.from_absolute(d), ())
 
 	@classmethod
-	def which(typ, exe, dirname = os.path.dirname):
+	def which(Class, exe, dirname = os.path.dirname):
 		"""
 		Return a new Route to the executable found by which.
 		"""
@@ -181,7 +185,7 @@ class File(Route):
 		rp = shutil.which(exe)
 		dn = dirname(rp)
 
-		return typ(typ.from_absolute(dn), (rp[len(dn)+1:],))
+		return Class(Class.from_absolute(dn), (rp[len(dn)+1:],))
 
 	def __repr__(self):
 		return '{0}.{1}.from_absolute({2!r})'.format(__name__, self.__class__.__name__, self.fullpath)
@@ -211,7 +215,7 @@ class File(Route):
 		return sep.join((prefix, rpath))
 
 	@property
-	def bytespath(self, encoding = sys.getfilesystemencoding()):
+	def bytespath(self, encoding=sys.getfilesystemencoding()):
 		"""
 		Returns the full filesystem path designated by the route as a @bytes object
 		returned by encoding the @fullpath in @sys.getfilesystemencoding with 'surrogateescape'.
@@ -219,15 +223,15 @@ class File(Route):
 
 		return self.fullpath.encode(encoding, "surrogateescape")
 
-	def suffix(self, s):
+	def suffix(self, appended_suffix):
 		"""
 		Modify the name of the file adding the given suffix.
 
-		Returns a new Route.
+		Returns a new &File Route.
 		"""
 
 		*prefix, basename = self.points
-		prefix.append(basename + s)
+		prefix.append(basename + appended_suffix)
 
 		return self.__class__(self.datum, tuple(prefix))
 
@@ -235,7 +239,7 @@ class File(Route):
 		"""
 		Modify the name of the file adding the given prefix.
 
-		Returns a new Route.
+		Returns a new &File Route.
 		"""
 
 		*prefix, basename = self.points
@@ -280,7 +284,7 @@ class File(Route):
 	def is_container(self, isdir = os.path.isdir):
 		return isdir(self.fullpath)
 
-	def subnodes(self, listdir = os.listdir, isdir = os.path.isdir, join = os.path.join):
+	def subnodes(self, listdir=os.listdir, isdir=os.path.isdir, join=os.path.join):
 		"""
 		Return a pair of lists, the first being a list of Routes to
 		directories in this Route and the second being a list of Routes to non-directories
@@ -292,7 +296,7 @@ class File(Route):
 		path = self.fullpath
 
 		try:
-			l = listdir(self.fullpath)
+			l = listdir(path)
 		except OSError:
 			# Error indifferent.
 			# User must make explicit checks to interrogate permission/existence.
@@ -309,7 +313,7 @@ class File(Route):
 
 		return directories, files
 
-	def real(self, exists = os.path.exists):
+	def real(self, exists=os.path.exists):
 		"""
 		Return the part of the File route that actually exists on the File system.
 		"""
@@ -320,7 +324,7 @@ class File(Route):
 				return x
 			x = x.container
 
-	def exists(self, exists = os.path.exists):
+	def exists(self, exists=os.path.exists):
 		"""
 		Return the part of the File route that actually exists on the File system.
 		"""
@@ -370,7 +374,7 @@ class File(Route):
 				pass
 		return False
 
-	def last_modified(self, stat = os.stat, unix = time.unix):
+	def last_modified(self, stat=os.stat, unix=time.unix):
 		return unix(stat(self.fullpath).st_mtime)
 
 	def init(self, type, mkdir = os.mkdir, exists = os.path.exists):
@@ -383,7 +387,7 @@ class File(Route):
 
 		If a node of any type already exists at this route, nothing happens.
 
-		`type` is one of: :py:obj:`'file'`, :py:obj:`'directory'`, :py:obj:`'pipe'`.
+		&type is one of: &`'file'`, &`'directory'`, &`'pipe'`.
 		"""
 
 		fp = self.fullpath
@@ -451,7 +455,7 @@ class Import(Route):
 	__slots__ = ('datum', 'points',)
 
 	@classmethod
-	def from_context(typ):
+	def from_context(Class):
 		"""
 		Return a new Route to the package containing the module that is executing
 		:py:meth:`from_context`. If the module is a package, a Route to that package is
@@ -461,21 +465,24 @@ class Import(Route):
 		while f is not None and f.f_globals['__name__'] == __name__:
 			f = f.f_back
 		if f is not None:
-			return typ.from_fullname(f.f_globals['__package__'])
+			return Class.from_fullname(f.f_globals['__package__'])
 		return None
 
 	@classmethod
-	def from_fullname(typ, s):
+	def from_fullname(Class, s):
 		"""
 		Given an absolute module path, return a Pointer instance to that path.
 		"""
-		return typ.from_points(None, *s.split('.'))
+		return Class.from_points(None, *s.split('.'))
 
 	@classmethod
-	def from_points(typ, datum, *points):
-		rob = object.__new__(typ)
+	def from_points(Class, datum, *points):
+		rob = object.__new__(Class)
 		rob.__init__(datum, points)
 		return rob
+
+	def __bool__(self):
+		return any((self.datum, self.points))
 
 	def __str__(self):
 		return self.fullname
@@ -506,8 +513,8 @@ class Import(Route):
 	@property
 	def package(self):
 		"""
-		Return a Pointer to the module's package.
-		If the Pointer is referencing a package, return the object.
+		Return a &Route to the module's package.
+		If the &Route is referencing a package, return &self.
 		"""
 
 		if self.is_container():
@@ -532,12 +539,19 @@ class Import(Route):
 
 		return self.spec().loader
 
-	def spec(self, find_spec = importlib.util.find_spec):
+	def spec(self, find_spec=importlib.util.find_spec):
 		"The spec for loading the module."
 
 		return find_spec(self.fullname)
 
-	def is_container(self, find_loader = pkgutil.find_loader):
+	def exists(self):
+		"""
+		Whether or not the module exists inside the Python paths.
+		However, the module may not be importable.
+		"""
+		return (self.spec() is not None)
+
+	def is_container(self, find_loader=pkgutil.find_loader):
 		"""
 		Interrogate the module's loader as to whether or not it's a "package module".
 		"""
@@ -545,7 +559,7 @@ class Import(Route):
 		return find_loader(fn).is_package(fn)
 	is_package = is_container
 
-	def real(self, find_loader = pkgutil.find_loader):
+	def real(self):
 		"""
 		The "real" portion of the Route.
 		Greatest Absolute Route that actually exists.
@@ -554,11 +568,14 @@ class Import(Route):
 		"""
 		x = self
 		while x.points:
-			if find_loader(x.fullname):
-				return x
+			try:
+				if x.spec() is not None:
+					return x
+			except (ImportError, AttributeError):
+				pass
 			x = x.container
 
-	def last_modified(self, stat = os.stat, unix = time.unix):
+	def last_modified(self, stat=os.stat, unix=time.unix):
 		"""
 		Return the modification time of the module's file as a chronometry Timestamp.
 		For fault.development extension modules, this returns the modification
@@ -577,43 +594,44 @@ class Import(Route):
 			if attr in x.__dict__:
 				yield (x, x.__dict__[attr])
 
-	def bottom(self, valids = (True, False), name = '__pkg_bottom__'):
+	def bottom(self, valids=(True, False), name='__pkg_bottom__'):
 		"""
 		Return a Route to the package module containing an attribute named
-		'__pkg_bottom__' whose value is &True or &False.
+		`'__pkg_bottom__'` whose value is &True or &False.
 		"""
+
 		for (mod, value) in self.scan(name):
 			if value in valids:
 				return self.__class__.from_fullname(mod.__name__)
+
 		return None # no bottom
 
 	def project(self):
 		"Return the 'project' module of the &.bottom package."
+
 		bottom = self.bottom()
 		if bottom is not None:
 			return (bottom/'project').module()
 
-	def module(self, import_module = importlib.import_module):
+	def module(self, import_module=importlib.import_module):
 		"Return the module that is being referred to by the path."
-		fn = self.fullname
-		ld = self.loader
-		if ld is None:
-			# module does not exist
+		try:
+			return import_module(self.fullname)
+		except ImportError:
 			return None
-		return import_module(fn)
 
 	def stack(self):
 		"""
 		Return a list of module objects. The first being the outermost package module, the
 		last being the module being pointed to, subject module, and the between being the
-		packages leading to the subject.
+		packages leading to the &self.
 		"""
 		x = self
 		r = []
 		while x.points:
 			mod = x.module()
 			if mod is None:
-				return None
+				continue
 			r.append(mod)
 			x = x.container
 		return r
@@ -665,3 +683,11 @@ class Import(Route):
 			# NamespaceLoader seems inconsistent here.
 			path = self.loader._path._path
 		return from_path(path)
+
+	def directory(self):
+		"""
+		The package directory of the module.
+		"""
+
+		pkg = self.package
+		return pkg.file().container
