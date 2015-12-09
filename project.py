@@ -1,5 +1,3 @@
-'project information'
-
 #: Project name.
 name = 'routes'
 abstract = 'filesystem path and module path manipulation tools'

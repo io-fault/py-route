@@ -64,7 +64,6 @@ class Route(object):
 		try:
 			return self.__class__(self.datum, self.points + (next_point,))
 		except:
-			print(self.datum, self.points)
 			raise
 
 	def extend(self, extension):
@@ -312,6 +311,24 @@ class File(Route):
 				files.append(sub)
 
 		return directories, files
+
+	def tree(self, deque=collections.deque):
+		"Return a directory's full tree."
+		dirs, files = self.subnodes()
+		cseq = deque(dirs)
+
+		while cseq:
+			dir = cseq.popleft()
+			sd, sf = dir.subnodes()
+
+			# extend output
+			dirs.extend(sd)
+			files.extend(sf)
+
+			# process subdirectories
+			cseq.extend(sd)
+
+		return dirs, files
 
 	def real(self, exists=os.path.exists):
 		"""
@@ -626,17 +643,19 @@ class Import(Route):
 		last being the module being pointed to, subject module, and the between being the
 		packages leading to the &self.
 		"""
+
 		x = self
 		r = []
 		while x.points:
 			mod = x.module()
 			if mod is None:
+				x = x.container
 				continue
 			r.append(mod)
 			x = x.container
 		return r
 
-	def subnodes(self, iter_modules = pkgutil.iter_modules):
+	def subnodes(self, iter_modules=pkgutil.iter_modules):
 		"Return a pairs of sequences containing routes to the subnodes of the route."
 		packages = []
 		modules = []
