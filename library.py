@@ -475,7 +475,7 @@ class Import(Route):
 	def from_context(Class):
 		"""
 		Return a new Route to the package containing the module that is executing
-		:py:meth:`from_context`. If the module is a package, a Route to that package is
+		&from_context. If the module is a package, a Route to that package is
 		returned.
 		"""
 		f = sys._getframe()
@@ -657,6 +657,7 @@ class Import(Route):
 
 	def subnodes(self, iter_modules=pkgutil.iter_modules):
 		"Return a pairs of sequences containing routes to the subnodes of the route."
+
 		packages = []
 		modules = []
 
@@ -679,6 +680,7 @@ class Import(Route):
 
 	def tree(self, deque = collections.deque):
 		"Return a package's full tree."
+
 		pkgs, mods = self.subnodes()
 		tree = {}
 		pkgsq = deque(pkgs)
@@ -697,6 +699,7 @@ class Import(Route):
 
 	def file(self, from_path = File.from_path):
 		"Get the &File instance pointing to the module's file."
+
 		path = getattr(self.loader, 'path', None)
 		if path is None:
 			# NamespaceLoader seems inconsistent here.
@@ -710,3 +713,10 @@ class Import(Route):
 
 		pkg = self.package
 		return pkg.file().container
+
+	def cache(self):
+		"""
+		The `__pycache__` directory associated with the module's file.
+		"""
+
+		return self.directory() / '__pycache__'
