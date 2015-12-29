@@ -559,7 +559,10 @@ class Import(Route):
 	def spec(self, find_spec=importlib.util.find_spec):
 		"The spec for loading the module."
 
-		return find_spec(self.fullname)
+		try:
+			return find_spec(self.fullname)
+		except Exception:
+			return None
 
 	def exists(self):
 		"""
@@ -634,7 +637,7 @@ class Import(Route):
 		"Return the module that is being referred to by the path."
 		try:
 			return import_module(self.fullname)
-		except ImportError:
+		except Exception:
 			return None
 
 	def stack(self):
