@@ -498,6 +498,18 @@ class Import(Route):
 		rob.__init__(datum, points)
 		return rob
 
+	@classmethod
+	def from_attributes(Class, path, tuple=tuple):
+		"""
+		Create a &Route and an attributes sequence based on the given &path such that
+		the &Route is the &real portion of the &path and text following real module
+		path is the sequence of attributes.
+		"""
+		R = Class.from_fullname(path)
+		module = R.real()
+		attributes = path[len(str(module))+1:]
+		return module, tuple(attributes.split('.'))
+
 	def __bool__(self):
 		return any((self.datum, self.points))
 
@@ -606,7 +618,7 @@ class Import(Route):
 
 	def scan(self, attr):
 		"""
-		Scan the &.stack of modules for the given attribute returning a pair
+		Scan the &stack of modules for the given attribute returning a pair
 		containing the module the object at that attribute.
 		"""
 		modules = self.stack()
@@ -617,7 +629,7 @@ class Import(Route):
 	def bottom(self, valids=(True, False), name='__pkg_bottom__'):
 		"""
 		Return a Route to the package module containing an attribute named
-		`'__pkg_bottom__'` whose value is &True or &False.
+		(fs-path)`__pkg_bottom__` whose value is &True or &False.
 		"""
 
 		for (mod, value) in self.scan(name):
@@ -627,7 +639,7 @@ class Import(Route):
 		return None # no bottom
 
 	def project(self):
-		"Return the 'project' module of the &.bottom package."
+		"Return the 'project' module of the &bottom package."
 
 		bottom = self.bottom()
 		if bottom is not None:
@@ -635,6 +647,7 @@ class Import(Route):
 
 	def module(self, import_module=importlib.import_module):
 		"Return the module that is being referred to by the path."
+
 		try:
 			return import_module(self.fullname)
 		except Exception:
@@ -659,7 +672,9 @@ class Import(Route):
 		return r
 
 	def subnodes(self, iter_modules=pkgutil.iter_modules):
-		"Return a pairs of sequences containing routes to the subnodes of the route."
+		"""
+		Return a pairs of sequences containing routes to the subnodes of the route.
+		"""
 
 		packages = []
 		modules = []
@@ -682,7 +697,9 @@ class Import(Route):
 		return packages, modules
 
 	def tree(self, deque = collections.deque):
-		"Return a package's full tree."
+		"""
+		Return a package's full tree.
+		"""
 
 		pkgs, mods = self.subnodes()
 		tree = {}
@@ -701,7 +718,9 @@ class Import(Route):
 		return pkgs, mods
 
 	def file(self, from_path = File.from_path):
-		"Get the &File instance pointing to the module's file."
+		"""
+		Get the &File instance pointing to the module's file.
+		"""
 
 		path = getattr(self.loader, 'path', None)
 		if path is None:
@@ -719,7 +738,7 @@ class Import(Route):
 
 	def cache(self):
 		"""
-		The `__pycache__` directory associated with the module's file.
+		The (fs-point)`__pycache__` directory associated with the module's file.
 		"""
 
 		return self.directory() / '__pycache__'
