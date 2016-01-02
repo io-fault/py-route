@@ -125,7 +125,6 @@ class File(Route):
 	"""
 	Route subclass for file system objects.
 	"""
-
 	__slots__ = ('datum', 'points',)
 
 	@classmethod
@@ -135,9 +134,9 @@ class File(Route):
 	@classmethod
 	def home(Class):
 		"""
-		Return a new Route to the "HOME" directory defined by the environment.
+		Return a new Route to the home directory defined by the environment.
 
-		The returned Route's `datum` is the HOME path.
+		The returned Route's &datum is the HOME path.
 		"""
 
 		return Class(Class.from_absolute(os.environ['HOME']), ())
@@ -170,7 +169,10 @@ class File(Route):
 	@classmethod
 	@contextlib.contextmanager
 	def temporary(Class):
-		"Create a temporary directory at the route using a context manager."
+		"""
+		Create a temporary directory at the route using a context manager.
+		"""
+		global tempfile
 
 		with tempfile.TemporaryDirectory() as d:
 			yield Class(Class.from_absolute(d), ())
@@ -216,8 +218,9 @@ class File(Route):
 	@property
 	def bytespath(self, encoding=sys.getfilesystemencoding()):
 		"""
-		Returns the full filesystem path designated by the route as a @bytes object
-		returned by encoding the @fullpath in @sys.getfilesystemencoding with 'surrogateescape'.
+		Returns the full filesystem path designated by the route as a &bytes object
+		returned by encoding the @fullpath in &sys.getfilesystemencoding with
+		`'surrogateescape'` as the error mode.
 		"""
 
 		return self.fullpath.encode(encoding, "surrogateescape")
@@ -355,7 +358,7 @@ class File(Route):
 		&None if there is no file at the route, number of nodes (files, directories, etc)
 		if a directory, and the number of bytes contained within the file if a regular file.
 
-		The file size is determined using &os.stat with follow_symlink=True.
+		The file size is determined using &os.stat while following symbolic links.
 		"""
 
 		if not self.exists():
@@ -396,15 +399,13 @@ class File(Route):
 
 	def init(self, type, mkdir = os.mkdir, exists = os.path.exists):
 		"""
-		init(type)
-
 		Create the filesystem node described by the type parameter at this route.
 		Any directories leading up to the node will be automatically created if
 		they do not exist.
 
 		If a node of any type already exists at this route, nothing happens.
 
-		&type is one of: &`'file'`, &`'directory'`, &`'pipe'`.
+		&type is one of: `'file'`, `'directory'`, `'pipe'`.
 		"""
 
 		fp = self.fullpath
@@ -610,10 +611,7 @@ class Import(Route):
 	def last_modified(self, stat=os.stat, unix=time.unix):
 		"""
 		Return the modification time of the module's file as a chronometry Timestamp.
-		For fault.development extension modules, this returns the modification
-		time of the source (src) directory inside the containing package module.
 		"""
-		# XXX: handle fault.development extension modules
 		return unix(stat(self.module().__file__).st_mtime)
 
 	def scan(self, attr):
