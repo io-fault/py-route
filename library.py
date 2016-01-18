@@ -643,13 +643,16 @@ class Import(Route):
 		if bottom is not None:
 			return (bottom/'project').module()
 
-	def module(self, import_module=importlib.import_module):
+	def module(self, trap=True, import_module=importlib.import_module):
 		"Return the module that is being referred to by the path."
 
 		try:
 			return import_module(self.fullname)
 		except Exception:
-			return None
+			if trap is True:
+				return None
+			else:
+				raise
 
 	def stack(self):
 		"""
