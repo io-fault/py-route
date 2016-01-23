@@ -93,15 +93,15 @@ class Route(object):
 		return r
 
 	@property
-	def identity(self):
+	def identifier(self):
 		"""
-		The identity of the node relative to its container. (Head)
+		The identifier of the node relative to its container. (Head)
 		"""
 
 		if self.points:
 			return self.points[-1]
 		else:
-			return self.datum.identity
+			return self.datum.identifier
 
 	@property
 	def root(self):
@@ -259,7 +259,7 @@ class File(Route):
 		consistency of the file's content.
 		"""
 
-		return self.identity.rsplit('.', 1)[-1]
+		return self.identifier.rsplit('.', 1)[-1]
 
 	_type_map = {
 			stat.S_IFIFO: 'pipe',
@@ -350,24 +350,21 @@ class File(Route):
 		"""
 		return exists(self.fullpath)
 
-	# XXX: size() using listdir to get a content count is probably too inefficient
-	def size(self, listdir=os.listdir, stat=os.stat):
+	def size(self, stat=os.stat) -> int:
 		"""
-		Return whether or not the file or directory has contents.
+		Return the size of the file as depicted by &/unix/man/2/stat.
 
-		&None if there is no file at the route, number of nodes (files, directories, etc)
-		if a directory, and the number of bytes contained within the file if a regular file.
-
-		The file size is determined using &os.stat while following symbolic links.
+		The &os.stat function is used to get the information.
+		&None is returned if an &OSError is raised by the call.
 		"""
 
-		if not self.exists():
-			return None
+		return stat(self.fullpath, follow_symlinks=True).st_size
 
-		if self.is_container():
-			return len(listdir(self.fullpath))
-		else:
-			return stat(self.fullpath, follow_symlinks=True).st_size
+	def last_modified(self, stat=os.stat, unix=time.unix) -> time.Timestamp:
+		"""
+		Return the modification time of the file.
+		"""
+		return unix(stat(self.fullpath).st_mtime)
 
 	def void(self, rmtree = shutil.rmtree, remove = os.remove):
 		"""
@@ -384,8 +381,10 @@ class File(Route):
 	def replace(self, route):
 		"""
 		Drop the existing node and replace it with the file or directory at the
-		given route
+		given route.
 		"""
+		global shutil
+
 		if self.void():
 			try:
 				shutil.copytree(route.fullpath, self.fullpath)
@@ -393,9 +392,6 @@ class File(Route):
 			except OSError:
 				pass
 		return False
-
-	def last_modified(self, stat=os.stat, unix=time.unix):
-		return unix(stat(self.fullpath).st_mtime)
 
 	def init(self, type, mkdir = os.mkdir, exists = os.path.exists):
 		"""

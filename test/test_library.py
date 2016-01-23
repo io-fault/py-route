@@ -99,7 +99,6 @@ def test_File_size(test):
 	r = lib.File.from_path(__file__)
 
 	d = r.container / 'test-size-info'
-	test/d.size() == 4
 
 	f1 = d / 'one'
 	f2 = d / 'two'
@@ -116,7 +115,7 @@ def test_File_basename_manipulations(test):
 		f_archive = f.suffix('.tar.gz')
 		test/f_archive.fullpath.endswith('.tar.gz') == True
 		f_test_archive = f.prefix('test_')
-		test/f_test_archive.identity.startswith('test_') == True
+		test/f_test_archive.identifier.startswith('test_') == True
 
 def test_File_properties(test):
 	# executable
