@@ -87,6 +87,7 @@ class Route(object):
 		"""
 		The absolute sequence of points.
 		"""
+
 		r = self.points
 		x = self
 		while x.context is not None:
@@ -110,6 +111,7 @@ class Route(object):
 		"""
 		The root Route with respect to the Route's context.
 		"""
+
 		return self.__class__(self.context, self.points[0:1])
 
 	@property

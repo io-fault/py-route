@@ -109,6 +109,32 @@ def test_File_size(test):
 	test/f3.size() == 3
 	test/f4.size() == 4
 
+def test_File_last_modified(test):
+	"""
+	System check.
+	"""
+	import time
+
+	with lib.File.temporary() as d:
+		r = d / 'last_modified_testfile'
+		with r.open('w') as f:
+			f.write('data\n')
+
+		test/r.exists() == True
+
+		mtime1 = r.last_modified()
+		time.sleep(1)
+		# sleep one whole second in case the filesystem's
+		# precision is at the one second mark.
+
+		with r.open('a') as f:
+			f.write('appended\n')
+
+		mtime2 = r.last_modified()
+
+	test/mtime2 > mtime1
+	test/mtime1.measure(mtime2) >= lib.time.Measure.of(second=1)
+
 def test_File_basename_manipulations(test):
 	with lib.File.temporary() as t:
 		f = t/'doesnotexist'
