@@ -23,19 +23,19 @@ class Route(object):
 	Provides generic manipulation methods.
 	"""
 
-	def __init__(self, datum:object, points:tuple):
-		self.datum = datum
+	def __init__(self, context:object, points:tuple):
+		self.context = context
 		self.points = points
 
 	def rebase(self):
 		"""
-		Return a new equivalent instance with a datum depth of 1 so
-		that the new Route's datum contains all the points of the
+		Return a new equivalent instance with a context depth of 1 so
+		that the new Route's context contains all the points of the
 		original Route.
 		"""
 
-		datum = self.__class__(None, self.absolute)
-		return self.__class__(datum, ())
+		context = self.__class__(None, self.absolute)
+		return self.__class__(context, ())
 
 	def __hash__(self):
 		return hash(self.absolute)
@@ -50,21 +50,21 @@ class Route(object):
 	def __getitem__(self, req):
 		# for select slices of routes
 		if isinstance(req, slice):
-			return self.__class__(self.datum, self.points[req])
+			return self.__class__(self.context, self.points[req])
 		else:
-			return self.__class__(self.datum, (self.points[req],))
+			return self.__class__(self.context, (self.points[req],))
 
 	def __add__(self, tail):
 		"Add the two Routes together."
-		if tail.datum is None:
+		if tail.context is None:
 			return tail.__class__(self, tail.points)
 		else:
-			# replace the datum
+			# replace the context
 			return tail.__class__(self, tail.absolute.points)
 
 	def __truediv__(self, next_point):
 		try:
-			return self.__class__(self.datum, self.points + (next_point,))
+			return self.__class__(self.context, self.points + (next_point,))
 		except:
 			raise
 
@@ -75,12 +75,12 @@ class Route(object):
 
 	def __invert__(self):
 		"""
-		Consume one datum level into a new Route.
+		Consume one context level into a new Route.
 		"""
 
-		if self.datum is None:
+		if self.context is None:
 			return self
-		return self.__class__(self.datum.datum, self.datum.points + self.points)
+		return self.__class__(self.context.context, self.context.points + self.points)
 
 	@property
 	def absolute(self):
@@ -89,9 +89,9 @@ class Route(object):
 		"""
 		r = self.points
 		x = self
-		while x.datum is not None:
-			r = x.datum.points + r
-			x = x.datum
+		while x.context is not None:
+			r = x.context.points + r
+			x = x.context
 		return r
 
 	@property
@@ -103,14 +103,14 @@ class Route(object):
 		if self.points:
 			return self.points[-1]
 		else:
-			return self.datum.identifier
+			return self.context.identifier
 
 	@property
 	def root(self):
 		"""
-		The root Route with respect to the Route's datum.
+		The root Route with respect to the Route's context.
 		"""
-		return self.__class__(self.datum, self.points[0:1])
+		return self.__class__(self.context, self.points[0:1])
 
 	@property
 	def container(self):
@@ -119,7 +119,7 @@ class Route(object):
 		sequence.
 		"""
 		if self.points:
-			return self.__class__(self.datum, self.points[:-1])
+			return self.__class__(self.context, self.points[:-1])
 		else:
 			return self.__class__(None, self.absolute[:-1])
 
@@ -150,7 +150,7 @@ class File(Route):
 	"""
 	Route subclass for file system objects.
 	"""
-	__slots__ = ('datum', 'points',)
+	__slots__ = ('context', 'points',)
 
 	@classmethod
 	def from_absolute(Class, s, sep = os.path.sep):
@@ -161,7 +161,7 @@ class File(Route):
 		"""
 		Return a new Route to the home directory defined by the environment.
 
-		The returned Route's &datum is the HOME path.
+		The returned Route's &context is the HOME path.
 		"""
 
 		return Class(Class.from_absolute(os.environ['HOME']), ())
@@ -171,7 +171,7 @@ class File(Route):
 		"""
 		Return a new Route to the current working directory.
 
-		The returned Route's `datum` is the current working directory path.
+		The returned Route's `context` is the current working directory path.
 		"""
 
 		return Class(Class.from_absolute(getcwd()), ())
@@ -228,9 +228,9 @@ class File(Route):
 		Returns the full filesystem path designated by the route.
 		"""
 
-		if self.datum is not None:
-			# let the outermost datum handle the root /, if any
-			prefix = self.datum.fullpath
+		if self.context is not None:
+			# let the outermost context handle the root /, if any
+			prefix = self.context.fullpath
 			if not self.points:
 				return prefix
 		else:
@@ -263,7 +263,7 @@ class File(Route):
 		*prefix, basename = self.points
 		prefix.append(basename + appended_suffix)
 
-		return self.__class__(self.datum, tuple(prefix))
+		return self.__class__(self.context, tuple(prefix))
 
 	def prefix(self, s):
 		"""
@@ -275,7 +275,7 @@ class File(Route):
 		*prefix, basename = self.points
 		prefix.append(s + basename)
 
-		return self.__class__(self.datum, tuple(prefix))
+		return self.__class__(self.context, tuple(prefix))
 
 	@property
 	def extension(self):
@@ -543,7 +543,7 @@ class File(Route):
 class Import(Route):
 	"Route for Python packages and modules."
 
-	__slots__ = ('datum', 'points',)
+	__slots__ = ('context', 'points',)
 
 	@classmethod
 	def from_context(Class):
@@ -567,9 +567,9 @@ class Import(Route):
 		return Class.from_points(None, *s.split('.'))
 
 	@classmethod
-	def from_points(Class, datum, *points):
+	def from_points(Class, context, *points):
 		rob = object.__new__(Class)
-		rob.__init__(datum, points)
+		rob.__init__(context, points)
 		return rob
 
 	@classmethod
@@ -585,7 +585,7 @@ class Import(Route):
 		return module, tuple(attributes.split('.'))
 
 	def __bool__(self):
-		return any((self.datum, self.points))
+		return any((self.context, self.points))
 
 	def __str__(self):
 		return self.fullname
@@ -600,7 +600,7 @@ class Import(Route):
 		return abs.points[:len(self.points)] == self.points
 
 	def __getitem__(self, req):
-		return self.__class__(self.datum, self.points[req])
+		return self.__class__(self.context, self.points[req])
 
 	@property
 	def fullname(self):
@@ -623,18 +623,18 @@ class Import(Route):
 		if self.is_container():
 			return self
 
-		return self.__class__(self.datum, self.points[:-1])
+		return self.__class__(self.context, self.points[:-1])
 
 	@property
 	def root(self):
-		return self.__class__(self.datum, self.points[0:1])
+		return self.__class__(self.context, self.points[0:1])
 
 	@property
 	def container(self):
 		"""
 		Return a Pointer to the containing package. (parent package module)
 		"""
-		return self.__class__(self.datum, self.points[:-1])
+		return self.__class__(self.context, self.points[:-1])
 
 	@property
 	def loader(self):

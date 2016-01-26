@@ -8,9 +8,9 @@ def test_equality(test):
 	ir = lib.Import(None, ('foo',))
 	fr = lib.File(None, ('foo',))
 	test/ir.points == fr.points
-	test/ir.datum == fr.datum
+	test/ir.context == fr.context
 
-	# points and datum are identical, but the type needs to be the same as well.
+	# points and context are identical, but the type needs to be the same as well.
 	test/ir != fr
 
 def test_Import(test):
@@ -21,7 +21,7 @@ def test_Import(test):
 
 	# package.test
 	r = lib.Import.from_fullname(__package__)
-	# datum reduction
+	# context reduction
 	test/(~r is r) == True
 
 	# crawl stack; closest package module is chosen
@@ -65,7 +65,7 @@ def test_File(test):
 	dir = os.path.dirname(os.path.realpath(__file__))
 	r = lib.File.from_absolute(os.path.realpath(__file__))
 	test/r.fullpath == os.path.realpath(__file__)
-	# datum reduction
+	# context reduction
 	test/(~r is r) == True
 
 	rd = r.container

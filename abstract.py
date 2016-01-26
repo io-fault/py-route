@@ -16,10 +16,10 @@ class Route(metaclass=abc.ABCMeta):
 	"""
 	@property
 	@abc.abstractmethod
-	def datum(self):
+	def context(self):
 		"""
 		The &:route that this Route is relative to; &None if the route isn't anchored
-		to a particular datum.
+		to a particular Context.
 		"""
 
 	@property
@@ -27,7 +27,7 @@ class Route(metaclass=abc.ABCMeta):
 	def points(self):
 		"""
 		Tuple of *relative* nodes in the Route. Points are hashable identifiers used to
-		access the &:selection. This does not include the points in the &datum.
+		access the &:selection. This does not include the points in the &context.
 		"""
 
 	@property
@@ -35,17 +35,17 @@ class Route(metaclass=abc.ABCMeta):
 	def absolute(self):
 		"""
 		The absolute sequence of points relative to the hierarchy true root.
-		Conceptually, tuple(&datum) + tuple(&points).
+		Conceptually, tuple(&context) + tuple(&points).
 
-		When use of the &datum as an axis is no longer desired, this property should be accessed.
+		When use of the &context as an axis is no longer desired, this property should be accessed.
 		"""
 
 	@property
 	@abc.abstractmethod
 	def root(self):
 		"""
-		The root of the Route with respect to the Route's datum. The property's &Route
-		will have the &datum as a prefix and the initial point as its only point.
+		The root of the Route with respect to the Route's context. The property's &Route
+		will have the &context as a prefix and the initial point as its only point.
 		"""
 
 	@property
@@ -59,7 +59,7 @@ class Route(metaclass=abc.ABCMeta):
 	def discard(self, points = 1):
 		"""
 		Construct a new &Route consisting of path of the instance up until the specified number
-		of points. Discard does *not* cross datum boundaries.
+		of points. Discard does *not* cross context boundaries.
 		"""
 
 	@abc.abstractmethod
@@ -67,26 +67,26 @@ class Route(metaclass=abc.ABCMeta):
 		"""
 		Construct a new &Route consisting of the existing sequence of points up to the *last*
 		point specified by the &point argument. Similar to slicing a sequence from a
-		reverse index search. Truncate does *not* cross &datum boundaries.
+		reverse index search. Truncate does *not* cross &context boundaries.
 		"""
 
 	@abc.abstractmethod
 	def lateral(self, point, ascent = 1):
 		"""
-		Construct a new &Route that refers to a point that exists alongside the &datum of
-		the &Route. For filesystems, this would be the parent directory of the &datum with
+		Construct a new &Route that refers to a point that exists alongside the &context of
+		the &Route. For filesystems, this would be the parent directory of the &context with
 		the specified &point argument as its trailing point.
 
-		Used to escape &datum boundaries while still referring to it; &ascent defaults to
-		one, but can be used to adjust the distance from the &datum.
+		Used to escape &context boundaries while still referring to it; &ascent defaults to
+		one, but can be used to adjust the distance from the &context.
 		"""
 
 	@abc.abstractmethod
 	def ascend(self, ascent = 1):
 		"""
 		Construct a new &Route where the last &ascent number of points are discarded from
-		the route. However, if the level ascends beyond the &datum, cross the boundary and
-		define the route as being the root of a new &datum.
+		the route. However, if the level ascends beyond the &context, cross the boundary and
+		define the route as being the root of a new &context.
 		"""
 
 	@abc.abstractmethod
@@ -99,7 +99,7 @@ class Route(metaclass=abc.ABCMeta):
 	@abc.abstractmethod
 	def container(self):
 		"""
-		Return a Route to the outer Route. This will *not* cross datum boundaries.
+		Return a Route to the outer Route. This will *not* cross context boundaries.
 		"""
 
 	# System Queries; methods that actually interacts with the represented object
@@ -164,7 +164,7 @@ class Point(metaclass=abc.ABCMeta):
 		"""
 		An object representing the root of a hierarchy; the last lineal.
 
-		Unlike &Route instances, &Point's are not constrained to a datum, so the boundaries
+		Unlike &Route instances, &Point's are not constrained to a context, so the boundaries
 		are defined by the graph that is being interrogated.
 		"""
 
@@ -175,7 +175,7 @@ class Point(metaclass=abc.ABCMeta):
 		Reference to the object being interfaced relative to &root.
 		The &route with respect to the &root procures this &Point.
 
-		The datum of the &Route will be initialized to the absolute path to the &Point.
+		The context of the &Route will be initialized to the absolute path to the &Point.
 		"""
 
 	@property
