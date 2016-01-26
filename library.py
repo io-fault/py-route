@@ -123,6 +123,29 @@ class Route(object):
 		else:
 			return self.__class__(None, self.absolute[:-1])
 
+	@staticmethod
+	def _relative_resolution(points, len=len):
+		rob = []
+		add = rob.append
+		parent_count = 0
+
+		for x in points:
+			if x == '.':
+				continue
+			elif x == '..':
+				parent_count += 1
+			else:
+				if parent_count:
+					del rob[-parent_count:]
+					parent_count = 0
+				add(x)
+		else:
+			if parent_count:
+				del rob[-parent_count:]
+
+		return rob
+
+
 class File(Route):
 	"""
 	Route subclass for file system objects.
@@ -131,7 +154,7 @@ class File(Route):
 
 	@classmethod
 	def from_absolute(Class, s, sep = os.path.sep):
-		return Class(None, tuple([x for x in s.split(sep) if x]))
+		return Class(None, tuple(x for x in s.split(sep) if x))
 
 	@classmethod
 	def home(Class):
@@ -154,19 +177,22 @@ class File(Route):
 		return Class(Class.from_absolute(getcwd()), ())
 
 	@classmethod
-	def from_path(Class, string, realpath=os.path.realpath, dirname=os.path.dirname):
+	def from_path(Class, string, getcwd=os.getcwd):
 		"""
 		Return a new Route pointing to the file referenced by &string;
 		where string is a relative path that will be resolved into a real path.
 
-		The returned Route's `datum` is the parent directory of path and the
+		The returned Route's &Context is the parent directory of the path and the
 		basename is the only point.
 		"""
 
-		rp = realpath(string)
-		dn = dirname(rp)
+		if string.startswith('/'):
+			points = Class._relative_resolution(string.strip('/').split('/'))
+		else:
+			cwd = getcwd().strip('/').split('/')
+			points = Class._relative_resolution(cwd + string.strip('/').split('/'))
 
-		return Class(Class.from_absolute(dn), (rp[len(dn)+1:],))
+		return Class(None, tuple(points))
 
 	@classmethod
 	@contextlib.contextmanager
@@ -335,11 +361,14 @@ class File(Route):
 
 		return dirs, files
 
-	def modifications(self, since:time.Timestamp) -> typing.Iterable[typing.Tuple[time.Timestamp, Route]]:
+	def modifications(self, since:time.Timestamp,
+			traversed=None,
+		) -> typing.Iterable[typing.Tuple[time.Timestamp, Route]]:
 		"""
 		Identify the set of files that have been modified
-		since the given &point in time. The resulting iterator does not include
-		directories.
+		since the given point in time.
+
+		The resulting &typing.Iterable does not include directories.
 
 		[ Parameters ]
 
@@ -347,6 +376,16 @@ class File(Route):
 			The point in time after which files and directories will be identified
 			as being modified and returned inside the result set.
 		"""
+		if not traversed:
+			traversed = set()
+			traversed.add(self.real())
+		else:
+			rpath = self.real()
+			if rpath in traversed:
+				return
+			else:
+				traversed.add(rpath)
+
 		dirs, files = self.subnodes()
 
 		mt = self.last_modified()
