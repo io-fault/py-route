@@ -11,6 +11,8 @@ import tempfile
 import contextlib
 import collections
 import stat
+import typing
+import itertools
 
 from ..chronometry import library as time
 
@@ -333,6 +335,30 @@ class File(Route):
 
 		return dirs, files
 
+	def modifications(self, since:time.Timestamp) -> typing.Iterable[typing.Tuple[time.Timestamp, Route]]:
+		"""
+		Identify the set of files that have been modified
+		since the given &point in time. The resulting iterator does not include
+		directories.
+
+		[ Parameters ]
+
+		/since
+			The point in time after which files and directories will be identified
+			as being modified and returned inside the result set.
+		"""
+		dirs, files = self.subnodes()
+
+		mt = self.last_modified()
+		if mt.follows(since):
+			for x in files:
+				mt = x.last_modified()
+				if mt.follows(since):
+					yield (mt, x)
+
+		for x in dirs:
+			yield from x.modifications(since)
+
 	def real(self, exists=os.path.exists):
 		"""
 		Return the part of the File route that actually exists on the File system.
@@ -364,7 +390,19 @@ class File(Route):
 		"""
 		Return the modification time of the file.
 		"""
+
 		return unix(stat(self.fullpath).st_mtime)
+
+	def meta(self):
+		"""
+		Return file specific meta data.
+
+		! WARNING:
+			Preliminary API.
+		"""
+		st = stat(self.fullpath)
+
+		return (unix(st.st_ctime), unix(st.st_mtime), st.st_size)
 
 	def void(self, rmtree = shutil.rmtree, remove = os.remove):
 		"""
