@@ -2,6 +2,7 @@ import os
 import sys
 from .. import library as lib
 
+
 def test_equality(test):
 	# routes are rather abstract, but we dont want Routes for a given
 	# domain to match Routes with equal routing that exist in a distinct domain
@@ -12,6 +13,7 @@ def test_equality(test):
 
 	# points and context are identical, but the type needs to be the same as well.
 	test/ir != fr
+
 
 def test_Import(test):
 	# ..bit strange when dealing with nested project packages
@@ -61,6 +63,7 @@ def test_Import(test):
 	test/r.module() == None
 	test/r.real() == lib.Import.from_fullname(__package__)
 
+
 def test_File(test):
 	dir = os.path.dirname(os.path.realpath(__file__))
 	r = lib.File.from_absolute(os.path.realpath(__file__))
@@ -77,6 +80,7 @@ def test_File(test):
 
 	test/lib.File.from_absolute('/foo/bar.tar.gz').extension == 'gz'
 
+
 def test_File_temporary(test):
 	path = None
 	with lib.File.temporary() as t:
@@ -89,11 +93,13 @@ def test_File_temporary(test):
 	test/os.path.exists(path) == False
 	test/OSError ^ t.last_modified
 
+
 def test_File_void(test):
 	with lib.File.temporary() as t:
 		f = t/'doesnotexist'
 		test/f.is_container() == False
 		test/f.real() != f
+
 
 def test_File_size(test):
 	r = lib.File.from_path(__file__)
@@ -109,6 +115,7 @@ def test_File_size(test):
 	test/f3.size() == 3
 	test/f4.size() == 4
 
+
 def test_File_last_modified(test):
 	"""
 	System check.
@@ -123,7 +130,7 @@ def test_File_last_modified(test):
 		test/r.exists() == True
 
 		mtime1 = r.last_modified()
-		time.sleep(1)
+		time.sleep(1.1)
 		# sleep one whole second in case the filesystem's
 		# precision is at the one second mark.
 
@@ -135,6 +142,59 @@ def test_File_last_modified(test):
 	test/mtime2 > mtime1
 	test/mtime1.measure(mtime2) >= lib.time.Measure.of(second=1)
 
+
+def test_File_since(test):
+	"""
+	&lib.File.since
+	"""
+
+	with lib.File.temporary() as root:
+		f1 = root / 'file1'
+		f2 = root / 'file2'
+		f3 = root / 'file3'
+
+		files = [f1, f2, f3]
+		for x in files:
+			x.init('file')
+
+		times = [x.last_modified() for x in files]
+		times.sort(reverse=True)
+		y = times[0]
+
+		test/list(root.since(lib.time.now())) == []
+
+		m = root.since(lib.time.now().rollback(minute=1))
+		test/set(x[1] for x in m) == set(files)
+
+
+def test_File_construct(test):
+	"""
+	Test the various classmethods that construct file instances.
+	"""
+
+	test/str(lib.File.from_absolute('/')) == '/'
+
+	context = lib.File.from_absolute('/no/such/directory')
+
+	test/str(lib.File.from_relative(context, 'file')) == '/no/such/directory/file'
+	test/str(lib.File.from_relative(context, './file')) == '/no/such/directory/file'
+
+	test/str(lib.File.from_relative(context, '../file')) == '/no/such/file'
+	test/str(lib.File.from_relative(context, '../../file')) == '/no/file'
+
+	# Same directory
+	test/str(lib.File.from_relative(context, '../.././././file')) == '/no/file'
+
+	# parent references that find the limit.
+	test/str(lib.File.from_relative(context, '../../..')) == '/'
+	test/str(lib.File.from_relative(context, '../../../..')) == '/'
+
+	# Smoke test .from_path; two branches that use prior tested methods.
+	test/str(lib.File.from_path('./file')) == os.getcwd() + '/file'
+	test/str(lib.File.from_path('file')) == os.getcwd() + '/file'
+	test/str(lib.File.from_path('/file')) == '/file'
+
+
 def test_File_basename_manipulations(test):
 	with lib.File.temporary() as t:
 		f = t/'doesnotexist'
@@ -142,6 +202,7 @@ def test_File_basename_manipulations(test):
 		test/f_archive.fullpath.endswith('.tar.gz') == True
 		f_test_archive = f.prefix('test_')
 		test/f_test_archive.identifier.startswith('test_') == True
+
 
 def test_File_properties(test):
 	# executable

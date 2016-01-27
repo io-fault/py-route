@@ -132,7 +132,7 @@ class Route(object):
 		parent_count = 0
 
 		for x in points:
-			if x == '.':
+			if not x or x == '.':
 				continue
 			elif x == '..':
 				parent_count += 1
@@ -150,13 +150,56 @@ class Route(object):
 
 class File(Route):
 	"""
-	Route subclass for file system objects.
+	Route subclass for file system paths.
 	"""
 	__slots__ = ('context', 'points',)
 
 	@classmethod
-	def from_absolute(Class, s, sep = os.path.sep):
-		return Class(None, tuple(x for x in s.split(sep) if x))
+	def from_path(Class, path:str, getcwd=os.getcwd):
+		"""
+		Construct a &File instance from the given absolute or relative path
+		provided for &string; if a relative path is specified, it will
+		be relative to the current working directory as identified by
+		&os.getcwd.
+
+		This is usually the most appropriate way to instantiate a &File route
+		from user input. The exception being cases where the current working
+		directory is *not* the relevant context.
+		"""
+
+		if path and path[0] == '/':
+			return Class.from_absolute(path)
+		else:
+			return Class.from_relative(Class.from_absolute(getcwd()), path)
+
+	@classmethod
+	def from_relative(Class, context:"File", path:str, chain=itertools.chain):
+		"""
+		Return a new Route pointing to the file referenced by &path;
+		where path is a path relative to the &context &File instance.
+
+		This function does *not* refer to the current working directory
+		returned by &os.getcwd; if this is desired, &from_path is the
+		appropriate constructor to use.
+		"""
+
+		points = Class._relative_resolution(chain(context.absolute, path.strip('/').split('/')))
+		return Class(None, tuple(points))
+
+	@classmethod
+	def from_absolute(Class, path:str, sep=os.path.sep, tuple=tuple):
+		return Class(None, tuple(x for x in path.split(sep) if x))
+
+	@classmethod
+	def from_cwd(Class, *points:str, getcwd=os.getcwd):
+		"""
+		Return a new Route to the current working directory.
+
+		The returned Route's `context` is the current working directory path,
+		and the &points as the sequence of following identifiers.
+		"""
+
+		return Class(Class.from_absolute(getcwd()), points)
 
 	@classmethod
 	def home(Class):
@@ -169,42 +212,21 @@ class File(Route):
 		return Class(Class.from_absolute(os.environ['HOME']), ())
 
 	@classmethod
-	def from_cwd(Class, getcwd = os.getcwd):
-		"""
-		Return a new Route to the current working directory.
-
-		The returned Route's `context` is the current working directory path.
-		"""
-
-		return Class(Class.from_absolute(getcwd()), ())
-
-	@classmethod
-	def from_path(Class, string, getcwd=os.getcwd):
-		"""
-		Return a new Route pointing to the file referenced by &string;
-		where string is a relative path that will be resolved into a real path.
-
-		The returned Route's &Context is the parent directory of the path and the
-		basename is the only point.
-		"""
-
-		if string.startswith('/'):
-			points = Class._relative_resolution(string.strip('/').split('/'))
-		else:
-			cwd = getcwd().strip('/').split('/')
-			points = Class._relative_resolution(cwd + string.strip('/').split('/'))
-
-		return Class(None, tuple(points))
-
-	@classmethod
 	@contextlib.contextmanager
-	def temporary(Class):
+	def temporary(Class, TemporaryDirectory=tempfile.TemporaryDirectory) -> Route:
 		"""
 		Create a temporary directory at the route using a context manager.
-		"""
-		global tempfile
+		This is a wrapper around &tempfile.TemporaryDirectory that returns a &Route.
 
-		with tempfile.TemporaryDirectory() as d:
+		The use of specific temporary files is avoided as they have inconsistent
+		behavior on certain platforms.
+
+		A &File route to the temporary directory is returned on entrance,
+		so the (keyword)`as` target *must* be specified in order to refer
+		files inside the directory.
+		"""
+
+		with TemporaryDirectory() as d:
 			yield Class(Class.from_absolute(d), ())
 
 	@classmethod
@@ -225,7 +247,7 @@ class File(Route):
 		return self.fullpath
 
 	@property
-	def fullpath(self, sep = os.path.sep):
+	def fullpath(self, sep=os.path.sep):
 		"""
 		Returns the full filesystem path designated by the route.
 		"""
@@ -292,23 +314,23 @@ class File(Route):
 		return self.identifier.rsplit('.', 1)[-1]
 
 	_type_map = {
-			stat.S_IFIFO: 'pipe',
-			stat.S_IFSOCK: 'socket',
-			stat.S_IFLNK: 'link',
-			stat.S_IFDIR: 'directory',
-			stat.S_IFREG: 'file',
-			stat.S_IFBLK: 'device',
-			stat.S_IFCHR: 'device',
+		stat.S_IFIFO: 'pipe',
+		stat.S_IFSOCK: 'socket',
+		stat.S_IFLNK: 'link',
+		stat.S_IFDIR: 'directory',
+		stat.S_IFREG: 'file',
+		stat.S_IFBLK: 'device',
+		stat.S_IFCHR: 'device',
 	}
 
-	def type(self, ifmt = stat.S_IFMT, stat = os.stat, type_map = _type_map):
+	def type(self, ifmt=stat.S_IFMT, stat=os.stat, type_map=_type_map):
 		"The kind of node the route points to."
 
 		s = stat(self.fullpath)
 		return type_map[ifmt(s.st_mode)]
 
 	def executable(self, get_stat=os.stat, mask=stat.S_IXUSR|stat.S_IXGRP|stat.S_IXOTH):
-		"Whether the node is considered to be an executable."
+		"Whether the file at the route is considered to be an executable."
 
 		mode = get_stat(self.fullpath).st_mode
 		return (mode & mask) != 0
@@ -363,7 +385,7 @@ class File(Route):
 
 		return dirs, files
 
-	def modifications(self, since:time.Timestamp,
+	def since(self, since:time.Timestamp,
 			traversed=None,
 		) -> typing.Iterable[typing.Tuple[time.Timestamp, Route]]:
 		"""
@@ -378,6 +400,7 @@ class File(Route):
 			The point in time after which files and directories will be identified
 			as being modified and returned inside the result set.
 		"""
+
 		if not traversed:
 			traversed = set()
 			traversed.add(self.real())
@@ -390,12 +413,10 @@ class File(Route):
 
 		dirs, files = self.subnodes()
 
-		mt = self.last_modified()
-		if mt.follows(since):
-			for x in files:
-				mt = x.last_modified()
-				if mt.follows(since):
-					yield (mt, x)
+		for x in files:
+			mt = x.last_modified()
+			if mt.follows(since):
+				yield (mt, x)
 
 		for x in dirs:
 			yield from x.modifications(since)
@@ -415,6 +436,7 @@ class File(Route):
 		"""
 		Return the part of the File route that actually exists on the File system.
 		"""
+
 		return exists(self.fullpath)
 
 	def size(self, stat=os.stat) -> int:
@@ -441,6 +463,7 @@ class File(Route):
 		! WARNING:
 			Preliminary API.
 		"""
+
 		st = stat(self.fullpath)
 
 		return (unix(st.st_ctime), unix(st.st_mtime), st.st_size)
@@ -541,6 +564,7 @@ class File(Route):
 			yield None
 		finally:
 			chdir(cwd)
+
 
 class Import(Route):
 	"Route for Python packages and modules."
@@ -657,12 +681,14 @@ class Import(Route):
 		Whether or not the module exists inside the Python paths.
 		However, the module may not be importable.
 		"""
+
 		return (self.spec() is not None)
 
 	def is_container(self, find_loader=pkgutil.find_loader):
 		"""
 		Interrogate the module's loader as to whether or not it's a "package module".
 		"""
+
 		fn = self.fullname
 		return find_loader(fn).is_package(fn)
 	is_package = is_container
@@ -674,6 +700,7 @@ class Import(Route):
 
 		None if no parts are real.
 		"""
+
 		x = self
 		while x.points:
 			try:
@@ -687,6 +714,7 @@ class Import(Route):
 		"""
 		Return the modification time of the module's file as a chronometry Timestamp.
 		"""
+
 		return unix(stat(self.module().__file__).st_mtime)
 
 	def scan(self, attr):
@@ -694,6 +722,7 @@ class Import(Route):
 		Scan the &stack of modules for the given attribute returning a pair
 		containing the module the object at that attribute.
 		"""
+
 		modules = self.stack()
 		for x in modules:
 			if attr in x.__dict__:

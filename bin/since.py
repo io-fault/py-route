@@ -6,6 +6,7 @@ from ...chronometry import library as libtime
 def main(timestamp:str, *paths, file=None):
 	"""
 	[ Parameters ]
+
 	/timestamp
 		/`'now'`
 			Print the list of files in the directory
@@ -19,6 +20,7 @@ def main(timestamp:str, *paths, file=None):
 		/`<iso formatted timestamp>`
 			Print the list of files that have been modified
 			since the ISO-9660 formmated timestamp.
+
 	/paths
 		A set of relative paths to search for modifications within.
 	"""
@@ -34,7 +36,7 @@ def main(timestamp:str, *paths, file=None):
 
 	for x in paths:
 		r = libroutes.File.from_path(x)
-		for mt, mr in r.modifications(timestamp):
+		for mt, mr in r.since(timestamp):
 			print(str(mr).replace('\n', '\\n'), file=file)
 
 if __name__ == '__main__':
