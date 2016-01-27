@@ -419,7 +419,7 @@ class File(Route):
 				yield (mt, x)
 
 		for x in dirs:
-			yield from x.modifications(since)
+			yield from x.since(since)
 
 	def real(self, exists=os.path.exists):
 		"""
