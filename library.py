@@ -492,20 +492,25 @@ class File(Route):
 			else:
 				remove(self.fullpath)
 
-	def replace(self, route):
+	def replace(self, replacement:"File", copytree=shutil.copytree):
 		"""
-		Drop the existing node and replace it with the file or directory at the
-		given route.
+		Drop the existing file or directory and replace it with the
+		file or directory at the given route, &replacement.
+
+		[ Parameters ]
+
+		/replacement
+			The route to the file or directory that will be used to replace
+			the one at &self.
+
+		[ Return ]
+
+		&None
 		"""
 		global shutil
 
-		if self.void():
-			try:
-				shutil.copytree(route.fullpath, self.fullpath)
-				return True
-			except OSError:
-				pass
-		return False
+		self.void()
+		copytree(replacement.fullpath, self.fullpath)
 
 	def init(self, type, mkdir = os.mkdir, exists = os.path.exists):
 		"""
