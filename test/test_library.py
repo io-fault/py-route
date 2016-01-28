@@ -140,7 +140,29 @@ def test_File_last_modified(test):
 		mtime2 = r.last_modified()
 
 	test/mtime2 > mtime1
-	test/mtime1.measure(mtime2) >= lib.time.Measure.of(second=1)
+	test/mtime1.measure(mtime2) >= lib.libtime.Measure.of(second=1)
+
+
+def test_File_set_last_modified(test):
+	"""
+	System check.
+	"""
+
+	with lib.File.temporary() as d:
+		r = d / 'last_modified_testfile'
+		with r.open('w') as f:
+			f.write('data\n')
+
+		test/r.exists() == True
+		original_time = r.last_modified()
+
+		ttime = lib.libtime.now().update('minute', 0, 'hour')
+
+		r.set_last_modified(ttime)
+		new_time = r.last_modified()
+
+		test/new_time != original_time
+		test/new_time.truncate('second') == ttime.truncate('second')
 
 
 def test_File_since(test):
@@ -161,9 +183,9 @@ def test_File_since(test):
 		times.sort(reverse=True)
 		y = times[0]
 
-		test/list(root.since(lib.time.now())) == []
+		test/list(root.since(lib.libtime.now())) == []
 
-		m = root.since(lib.time.now().rollback(minute=1))
+		m = root.since(lib.libtime.now().rollback(minute=1))
 		test/set(x[1] for x in m) == set(files)
 
 

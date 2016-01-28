@@ -14,7 +14,7 @@ import stat
 import typing
 import itertools
 
-from ..chronometry import library as time
+from ..chronometry import library as libtime
 
 class Route(object):
 	"""
@@ -311,14 +311,19 @@ class File(Route):
 		consistency of the file's content.
 		"""
 
-		return self.identifier.rsplit('.', 1)[-1]
+		i = self.identifier
+		p = i.rfind('.')
+		if p == -1:
+			return None
+
+		return i[p+1:]
 
 	_type_map = {
 		stat.S_IFIFO: 'pipe',
-		stat.S_IFSOCK: 'socket',
 		stat.S_IFLNK: 'link',
-		stat.S_IFDIR: 'directory',
 		stat.S_IFREG: 'file',
+		stat.S_IFDIR: 'directory',
+		stat.S_IFSOCK: 'socket',
 		stat.S_IFBLK: 'device',
 		stat.S_IFCHR: 'device',
 	}
@@ -385,9 +390,9 @@ class File(Route):
 
 		return dirs, files
 
-	def since(self, since:time.Timestamp,
+	def since(self, since:libtime.Timestamp,
 			traversed=None,
-		) -> typing.Iterable[typing.Tuple[time.Timestamp, Route]]:
+		) -> typing.Iterable[typing.Tuple[libtime.Timestamp, Route]]:
 		"""
 		Identify the set of files that have been modified
 		since the given point in time.
@@ -449,12 +454,19 @@ class File(Route):
 
 		return stat(self.fullpath, follow_symlinks=True).st_size
 
-	def last_modified(self, stat=os.stat, unix=time.unix) -> time.Timestamp:
+	def last_modified(self, stat=os.stat, unix=libtime.unix) -> libtime.Timestamp:
 		"""
 		Return the modification time of the file.
 		"""
 
 		return unix(stat(self.fullpath).st_mtime)
+
+	def set_last_modified(self, time:libtime.Timestamp, utime=os.utime):
+		"""
+		Set the modification time of the file identified by the &Route.
+		"""
+
+		return utime(str(self), (-1, time.select('unix')/1000))
 
 	def meta(self):
 		"""
@@ -710,7 +722,7 @@ class Import(Route):
 				pass
 			x = x.container
 
-	def last_modified(self, stat=os.stat, unix=time.unix):
+	def last_modified(self, stat=os.stat, unix=libtime.unix) -> libtime.Timestamp:
 		"""
 		Return the modification time of the module's file as a chronometry Timestamp.
 		"""
