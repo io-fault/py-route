@@ -155,7 +155,7 @@ class File(Route):
 	__slots__ = ('context', 'points',)
 
 	@classmethod
-	def from_path(Class, path:str, getcwd=os.getcwd):
+	def from_path(Class, path:str, getcwd=os.getcwd) -> "File":
 		"""
 		Construct a &File instance from the given absolute or relative path
 		provided for &string; if a relative path is specified, it will
@@ -173,7 +173,7 @@ class File(Route):
 			return Class.from_relative(Class.from_absolute(getcwd()), path)
 
 	@classmethod
-	def from_relative(Class, context:"File", path:str, chain=itertools.chain):
+	def from_relative(Class, context:"File", path:str, chain=itertools.chain) -> "File":
 		"""
 		Return a new Route pointing to the file referenced by &path;
 		where path is a path relative to the &context &File instance.
@@ -187,11 +187,11 @@ class File(Route):
 		return Class(None, tuple(points))
 
 	@classmethod
-	def from_absolute(Class, path:str, sep=os.path.sep, tuple=tuple):
+	def from_absolute(Class, path:str, sep=os.path.sep, tuple=tuple) -> "File":
 		return Class(None, tuple(x for x in path.split(sep) if x))
 
 	@classmethod
-	def from_cwd(Class, *points:str, getcwd=os.getcwd):
+	def from_cwd(Class, *points:str, getcwd=os.getcwd) -> "File":
 		"""
 		Return a new Route to the current working directory.
 
@@ -202,7 +202,7 @@ class File(Route):
 		return Class(Class.from_absolute(getcwd()), points)
 
 	@classmethod
-	def home(Class):
+	def home(Class) -> "File":
 		"""
 		Return a new Route to the home directory defined by the environment.
 
@@ -230,7 +230,7 @@ class File(Route):
 			yield Class(Class.from_absolute(d), ())
 
 	@classmethod
-	def which(Class, exe, dirname = os.path.dirname):
+	def which(Class, exe, dirname=os.path.dirname) -> "File":
 		"""
 		Return a new Route to the executable found by which.
 		"""
@@ -247,7 +247,7 @@ class File(Route):
 		return self.fullpath
 
 	@property
-	def fullpath(self, sep=os.path.sep):
+	def fullpath(self, sep=os.path.sep) -> str:
 		"""
 		Returns the full filesystem path designated by the route.
 		"""
@@ -268,7 +268,7 @@ class File(Route):
 		return sep.join((prefix, rpath))
 
 	@property
-	def bytespath(self, encoding=sys.getfilesystemencoding()):
+	def bytespath(self, encoding=sys.getfilesystemencoding()) -> bytes:
 		"""
 		Returns the full filesystem path designated by the route as a &bytes object
 		returned by encoding the @fullpath in &sys.getfilesystemencoding with
@@ -277,7 +277,7 @@ class File(Route):
 
 		return self.fullpath.encode(encoding, "surrogateescape")
 
-	def suffix(self, appended_suffix):
+	def suffix(self, appended_suffix) -> "File":
 		"""
 		Modify the name of the file adding the given suffix.
 
@@ -289,7 +289,7 @@ class File(Route):
 
 		return self.__class__(self.context, tuple(prefix))
 
-	def prefix(self, s):
+	def prefix(self, s) -> "File":
 		"""
 		Modify the name of the file adding the given prefix.
 
@@ -328,19 +328,19 @@ class File(Route):
 		stat.S_IFCHR: 'device',
 	}
 
-	def type(self, ifmt=stat.S_IFMT, stat=os.stat, type_map=_type_map):
+	def type(self, ifmt=stat.S_IFMT, stat=os.stat, type_map=_type_map) -> str:
 		"The kind of node the route points to."
 
 		s = stat(self.fullpath)
 		return type_map[ifmt(s.st_mode)]
 
-	def executable(self, get_stat=os.stat, mask=stat.S_IXUSR|stat.S_IXGRP|stat.S_IXOTH):
+	def executable(self, get_stat=os.stat, mask=stat.S_IXUSR|stat.S_IXGRP|stat.S_IXOTH) -> bool:
 		"Whether the file at the route is considered to be an executable."
 
 		mode = get_stat(self.fullpath).st_mode
 		return (mode & mask) != 0
 
-	def is_container(self, isdir = os.path.isdir):
+	def is_container(self, isdir = os.path.isdir) -> bool:
 		return isdir(self.fullpath)
 
 	def subnodes(self, listdir=os.listdir, isdir=os.path.isdir, join=os.path.join):
@@ -426,7 +426,7 @@ class File(Route):
 		for x in dirs:
 			yield from x.since(since)
 
-	def real(self, exists=os.path.exists):
+	def real(self, exists=os.path.exists) -> "File":
 		"""
 		Return the part of the File route that actually exists on the File system.
 		"""
@@ -437,7 +437,7 @@ class File(Route):
 				return x
 			x = x.container
 
-	def exists(self, exists=os.path.exists):
+	def exists(self, exists=os.path.exists) -> bool:
 		"""
 		Return the part of the File route that actually exists on the File system.
 		"""
@@ -502,10 +502,6 @@ class File(Route):
 		/replacement
 			The route to the file or directory that will be used to replace
 			the one at &self.
-
-		[ Return ]
-
-		&None
 		"""
 		global shutil
 
