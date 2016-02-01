@@ -2,7 +2,6 @@ import os
 import sys
 from .. import library as lib
 
-
 def test_equality(test):
 	# routes are rather abstract, but we dont want Routes for a given
 	# domain to match Routes with equal routing that exist in a distinct domain
@@ -13,7 +12,6 @@ def test_equality(test):
 
 	# points and context are identical, but the type needs to be the same as well.
 	test/ir != fr
-
 
 def test_Import(test):
 	# ..bit strange when dealing with nested project packages
@@ -46,6 +44,7 @@ def test_Import(test):
 	# bottom
 	r = lib.Import.from_fullname(__package__)
 	test/r.bottom() == lib.Import.from_fullname(local)
+	test/r.bottom() == r.bottom().bottom()
 
 	# project
 	from .. import project
@@ -63,7 +62,6 @@ def test_Import(test):
 	test/r.module() == None
 	test/r.real() == lib.Import.from_fullname(__package__)
 
-
 def test_File(test):
 	dir = os.path.dirname(os.path.realpath(__file__))
 	r = lib.File.from_absolute(os.path.realpath(__file__))
@@ -80,7 +78,6 @@ def test_File(test):
 
 	test/lib.File.from_absolute('/foo/bar.tar.gz').extension == 'gz'
 
-
 def test_File_temporary(test):
 	path = None
 	with lib.File.temporary() as t:
@@ -93,13 +90,11 @@ def test_File_temporary(test):
 	test/os.path.exists(path) == False
 	test/OSError ^ t.last_modified
 
-
 def test_File_void(test):
 	with lib.File.temporary() as t:
 		f = t/'doesnotexist'
 		test/f.is_container() == False
 		test/f.real() != f
-
 
 def test_File_size(test):
 	r = lib.File.from_path(__file__)
@@ -114,7 +109,6 @@ def test_File_size(test):
 	test/f2.size() == 2
 	test/f3.size() == 3
 	test/f4.size() == 4
-
 
 def test_File_last_modified(test):
 	"""
@@ -142,7 +136,6 @@ def test_File_last_modified(test):
 	test/mtime2 > mtime1
 	test/mtime1.measure(mtime2) >= lib.libtime.Measure.of(second=1)
 
-
 def test_File_set_last_modified(test):
 	"""
 	System check.
@@ -156,14 +149,13 @@ def test_File_set_last_modified(test):
 		test/r.exists() == True
 		original_time = r.last_modified()
 
-		ttime = lib.libtime.now().update('minute', 0, 'hour')
+		ttime = lib.libtime.now().update('minute', -10, 'hour')
 
 		r.set_last_modified(ttime)
 		new_time = r.last_modified()
 
 		test/new_time != original_time
 		test/new_time.truncate('second') == ttime.truncate('second')
-
 
 def test_File_since(test):
 	"""
@@ -187,7 +179,6 @@ def test_File_since(test):
 
 		m = root.since(lib.libtime.now().rollback(minute=1))
 		test/set(x[1] for x in m) == set(files)
-
 
 def test_File_construct(test):
 	"""
@@ -216,7 +207,6 @@ def test_File_construct(test):
 	test/str(lib.File.from_path('file')) == os.getcwd() + '/file'
 	test/str(lib.File.from_path('/file')) == '/file'
 
-
 def test_File_basename_manipulations(test):
 	with lib.File.temporary() as t:
 		f = t/'doesnotexist'
@@ -224,7 +214,6 @@ def test_File_basename_manipulations(test):
 		test/f_archive.fullpath.endswith('.tar.gz') == True
 		f_test_archive = f.prefix('test_')
 		test/f_test_archive.identifier.startswith('test_') == True
-
 
 def test_File_properties(test):
 	# executable
@@ -238,6 +227,11 @@ def test_File_properties(test):
 
 	moddir = module.container
 	test/moddir.type() == "directory"
+
+def test_Import_anchor(test):
+	i = lib.Import.from_fullname(__package__)
+	i = i.anchor()
+	test/i.context == i.bottom()
 
 if __name__ == '__main__':
 	import sys; from ...development import libtest

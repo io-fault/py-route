@@ -117,8 +117,8 @@ class Route(object):
 	@property
 	def container(self):
 		"""
-		Return a Route to the outer Route; this merely removes the last crumb in the
-		sequence.
+		Return a Route to the outer Route; this merely removes the last point in the
+		sequence restructuing the &context when necessary.
 		"""
 		if self.points:
 			return self.__class__(self.context, self.points[:-1])
@@ -146,7 +146,6 @@ class Route(object):
 				del rob[-parent_count:]
 
 		return rob
-
 
 class File(Route):
 	"""
@@ -578,7 +577,6 @@ class File(Route):
 		finally:
 			chdir(cwd)
 
-
 class Import(Route):
 	"Route for Python packages and modules."
 
@@ -645,12 +643,19 @@ class Import(Route):
 	def fullname(self):
 		"Return the absolute path of the module Route; dot separated module names."
 		# accommodate for Nones
-		return '.'.join(self.points)
+		return '.'.join(self.absolute)
 
 	@property
 	def basename(self):
 		"The module's name relative to its package; node identifier used to refer to the module."
-		return self.points[-1]
+		if self.points:
+			return self.points[-1]
+		else:
+			abs = self.absolute
+			if abs:
+				return abs[-1]
+			else:
+				return None
 
 	@property
 	def package(self):
@@ -667,13 +672,6 @@ class Import(Route):
 	@property
 	def root(self):
 		return self.__class__(self.context, self.points[0:1])
-
-	@property
-	def container(self):
-		"""
-		Return a Pointer to the containing package. (parent package module)
-		"""
-		return self.__class__(self.context, self.points[:-1])
 
 	@property
 	def loader(self):
@@ -730,21 +728,39 @@ class Import(Route):
 
 		return unix(stat(self.module().__file__).st_mtime)
 
-	def scan(self, attr):
+	def stack(self):
+		"""
+		Return a list of module objects. The first being the outermost package module, the
+		last being the module being pointed to, subject module, and the between being the
+		packages leading to the &self.
+		"""
+
+		x = self
+		r = []
+
+		while (x.context, x.points) != (None, ()):
+			mod = x.module()
+			if mod is not None:
+				r.append(mod)
+			x = x.container
+
+		return r
+
+	def scan(self, attribute):
 		"""
 		Scan the &stack of modules for the given attribute returning a pair
-		containing the module the object at that attribute.
+		containing the module and the object accessed with the &attribute.
 		"""
 
 		modules = self.stack()
 		for x in modules:
-			if attr in x.__dict__:
-				yield (x, x.__dict__[attr])
+			if attribute in x.__dict__:
+				yield (x, x.__dict__[attribute])
 
 	def bottom(self, valids=(True, False), name='__pkg_bottom__'):
 		"""
 		Return a Route to the package module containing an attribute named
-		(fs-path)`__pkg_bottom__` whose value is &True or &False.
+		(python:name)`__pkg_bottom__` whose value is &True or &False.
 		"""
 
 		for (mod, value) in self.scan(name):
@@ -760,6 +776,16 @@ class Import(Route):
 		if bottom is not None:
 			return (bottom/'project').module()
 
+	def anchor(self):
+		"""
+		Anchor the &Import route according to the project's package (&bottom).
+		This returns a new &Import instance whose &context is &bottom.
+		"""
+		points = self.absolute
+		project = self.bottom()
+		rel = points[len(project.points):]
+		return self.__class__(project, tuple(rel))
+
 	def module(self, trap=True, import_module=importlib.import_module):
 		"Return the module that is being referred to by the path."
 
@@ -770,24 +796,6 @@ class Import(Route):
 				return None
 			else:
 				raise
-
-	def stack(self):
-		"""
-		Return a list of module objects. The first being the outermost package module, the
-		last being the module being pointed to, subject module, and the between being the
-		packages leading to the &self.
-		"""
-
-		x = self
-		r = []
-		while x.points:
-			mod = x.module()
-			if mod is None:
-				x = x.container
-				continue
-			r.append(mod)
-			x = x.container
-		return r
 
 	def subnodes(self, iter_modules=pkgutil.iter_modules):
 		"""
