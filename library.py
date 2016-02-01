@@ -619,7 +619,7 @@ class Import(Route):
 		R = Class.from_fullname(path)
 		module = R.real()
 		attributes = path[len(str(module))+1:]
-		return module, tuple(attributes.split('.'))
+		return module, tuple(attributes.split('.') if attributes else ())
 
 	def __bool__(self):
 		return any((self.context, self.points))

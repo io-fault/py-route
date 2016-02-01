@@ -233,6 +233,11 @@ def test_Import_anchor(test):
 	i = i.anchor()
 	test/i.context == i.bottom()
 
+def test_Import_from_attributes(test):
+	mod, attr = lib.Import.from_attributes(__package__)
+	test/mod == lib.Import.from_fullname(__package__)
+	test/attr == ()
+
 if __name__ == '__main__':
 	import sys; from ...development import libtest
 	libtest.execute(sys.modules[__name__])
