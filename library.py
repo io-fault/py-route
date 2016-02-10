@@ -1,5 +1,5 @@
 """
-Route implementations for Python modules and local file systems.
+File system routes and Python Import routes.
 """
 import os
 import os.path
@@ -13,9 +13,12 @@ import collections
 import stat
 import typing
 import itertools
+import functools
+import operator
 
-from ..chronometry import library as libtime
+from ..chronometry import library as libtime # Import needs to be delayed somehow.
 
+@functools.total_ordering
 class Route(object):
 	"""
 	Route base class.
@@ -27,7 +30,7 @@ class Route(object):
 		self.context = context
 		self.points = points
 
-	def rebase(self):
+	def __pos__(self):
 		"""
 		Return a new equivalent instance with a context depth of 1 so
 		that the new Route's context contains all the points of the
@@ -37,49 +40,99 @@ class Route(object):
 		context = self.__class__(None, self.absolute)
 		return self.__class__(context, ())
 
+	def __rshift__(self, target, predicate=operator.eq,
+			takewhile=itertools.takewhile,
+			zip=zip,
+		) -> (int, tuple):
+		"""
+		Construct a sequence of points identifying the &target relative to &self.
+
+		Essentially, find the common prefix and note the number of containers between
+		it and &self. Subsequentl, get the points necessary to select the target from
+		that common prefix.
+		"""
+
+		target_path = target.absolute
+		from_path = self.absolute
+
+		i = takewhile(True.__eq__, itertools.starmap(predicate, zip(target_path, from_path)))
+		top = sum(1 for x in i)
+		containers = len(from_path) - top - 1
+
+		return containers, tuple(target_path[top:])
+
+	def __lshift__(self, target):
+		return target >> self
+
 	def __hash__(self):
+		"""
+		Hash on the &absolute of the Route allowing consistency regardless of context.
+		"""
+
 		return hash(self.absolute)
 
 	def __eq__(self, ob, isinstance=isinstance):
-		# Datums can be None, so that's where the recursion stops.
-		return (isinstance(ob, self.__class__) and self.absolute == ob.absolute)
+		"""
+		Whether the absolute points of the two Routes are consistent.
+		"""
+
+		if isinstance(ob, self.__class__):
+			return self.absolute == ob.absolute
+
+	def __lt__(self, ob, isinstance=isinstance):
+		if isinstance(ob, self.__class__):
+			return self.absolute < ob.absolute
 
 	def __contains__(self, abs):
 		return abs.points[:len(self.points)] == self.points
 
 	def __getitem__(self, req):
-		# for select slices of routes
-		if isinstance(req, slice):
-			return self.__class__(self.context, self.points[req])
-		else:
-			return self.__class__(self.context, (self.points[req],))
+		"""
+		Select slices and items from the *relative* &points.
+		Points inside the &context will not be accessible.
+		"""
+
+		return self.points[req]
 
 	def __add__(self, tail):
-		"Add the two Routes together."
-		if tail.context is None:
-			return tail.__class__(self, tail.points)
-		else:
-			# replace the context
-			return tail.__class__(self, tail.absolute.points)
+		"""
+		Add the two Routes together maintaining the context of the first.
+
+		Maintains the invariant: `x+y == x.extend(y.absolute)`.
+		"""
+		return tail.__class__(self.context, self.points + tail.absolute)
 
 	def __truediv__(self, next_point):
-		try:
-			return self.__class__(self.context, self.points + (next_point,))
-		except:
-			raise
+		"""
+		Extend the Route by one point.
+		"""
+
+		return self.__class__(self.context, self.points + (next_point,))
 
 	def extend(self, extension):
-		"Extend the Route using the given sequence of points."
+		"""
+		Extend the Route using the given sequence of points.
+		"""
 
-		return self.__class__(self, tuple(extension))
+		return self.__class__(self.context, self.points + tuple(extension))
+
+	def __neg__(self):
+		"""
+		Return a new &Route with &self's absolute points reversed.
+		The &context is not maintained in the returned instance.
+		"""
+
+		return self.__class__(None, tuple(reversed(self.absolute)))
 
 	def __invert__(self):
 		"""
-		Consume one context level into a new Route.
+		Consume one context level into a new Route. The invariant, `self == ~self`, holds;
+		If the &context is &None, &self will be returned.
 		"""
 
 		if self.context is None:
 			return self
+
 		return self.__class__(self.context.context, self.context.points + self.points)
 
 	@property
@@ -104,12 +157,14 @@ class Route(object):
 		if self.points:
 			return self.points[-1]
 		else:
-			return self.context.identifier
+			if self.context is not None:
+				return self.context.identifier
+			return None
 
 	@property
 	def root(self):
 		"""
-		The root Route with respect to the Route's context.
+		The root &Route with respect to the Route's context.
 		"""
 
 		return self.__class__(self.context, self.points[0:1])
@@ -117,9 +172,10 @@ class Route(object):
 	@property
 	def container(self):
 		"""
-		Return a Route to the outer Route; this merely removes the last point in the
-		sequence restructuing the &context when necessary.
+		Return a Route to the outer (parent) Route; this merely removes the last point in the
+		sequence trimming the &context when necessary.
 		"""
+
 		if self.points:
 			return self.__class__(self.context, self.points[:-1])
 		else:
@@ -127,6 +183,12 @@ class Route(object):
 
 	@staticmethod
 	def _relative_resolution(points, len=len):
+		"""
+		Resolve points identified as self points, `.`, and container points, `..`.
+
+		Used by &Route subclasses to support relative paths; this method should not be used
+		directly.
+		"""
 		rob = []
 		add = rob.append
 		parent_count = 0
@@ -235,6 +297,9 @@ class File(Route):
 		"""
 
 		rp = shutil.which(exe)
+		if rp is None:
+			return None
+
 		dn = dirname(rp)
 
 		return Class(Class.from_absolute(dn), (rp[len(dn)+1:],))
@@ -270,7 +335,7 @@ class File(Route):
 	def bytespath(self, encoding=sys.getfilesystemencoding()) -> bytes:
 		"""
 		Returns the full filesystem path designated by the route as a &bytes object
-		returned by encoding the @fullpath in &sys.getfilesystemencoding with
+		returned by encoding the &fullpath in &sys.getfilesystemencoding with
 		`'surrogateescape'` as the error mode.
 		"""
 
@@ -328,13 +393,17 @@ class File(Route):
 	}
 
 	def type(self, ifmt=stat.S_IFMT, stat=os.stat, type_map=_type_map) -> str:
-		"The kind of node the route points to."
+		"""
+		The kind of node the route points to.
+		"""
 
 		s = stat(self.fullpath)
 		return type_map[ifmt(s.st_mode)]
 
 	def executable(self, get_stat=os.stat, mask=stat.S_IXUSR|stat.S_IXGRP|stat.S_IXOTH) -> bool:
-		"Whether the file at the route is considered to be an executable."
+		"""
+		Whether the file at the route is considered to be an executable.
+		"""
 
 		mode = get_stat(self.fullpath).st_mode
 		return (mode & mask) != 0
@@ -371,10 +440,13 @@ class File(Route):
 
 		return directories, files
 
-	def tree(self, deque=collections.deque):
-		"Return a directory's full tree."
+	def tree(self, Queue=collections.deque):
+		"""
+		Return a directory's full tree as a pair of lists of &File
+		instances referring to the contained directories and files.
+		"""
 		dirs, files = self.subnodes()
-		cseq = deque(dirs)
+		cseq = Queue(dirs)
 
 		while cseq:
 			dir = cseq.popleft()
@@ -405,11 +477,12 @@ class File(Route):
 			as being modified and returned inside the result set.
 		"""
 
+		# Traversed holds real absolute paths.
 		if not traversed:
 			traversed = set()
-			traversed.add(self.real())
+			traversed.add(os.path.realpath(str(self)))
 		else:
-			rpath = self.real()
+			rpath = os.path.realpath(str(self))
 			if rpath in traversed:
 				return
 			else:
@@ -423,7 +496,7 @@ class File(Route):
 				yield (mt, x)
 
 		for x in dirs:
-			yield from x.since(since)
+			yield from x.since(since, traversed=traversed)
 
 	def real(self, exists=os.path.exists) -> "File":
 		"""
@@ -491,7 +564,7 @@ class File(Route):
 			else:
 				remove(self.fullpath)
 
-	def replace(self, replacement:"File", copytree=shutil.copytree):
+	def replace(self, replacement:"File", copytree=shutil.copytree, copyfile=shutil.copyfile):
 		"""
 		Drop the existing file or directory and replace it with the
 		file or directory at the given route, &replacement.
@@ -505,9 +578,34 @@ class File(Route):
 		global shutil
 
 		self.void()
-		copytree(replacement.fullpath, self.fullpath)
+		src = replacement.fullpath
+		dst = self.fullpath
 
-	def init(self, type, mkdir = os.mkdir, exists = os.path.exists):
+		if replacement.is_container():
+			copytree(src, dst)
+		else:
+			copyfile(src, dst)
+
+	def link(self, to:"File", relative=True, link=os.symlink):
+		"""
+		Create a *symbolic* link at &self pointing to &to, the target file.
+
+		[ Parameters ]
+		/to
+			The target of the symbolic link.
+		/relative
+			Whether or not to resolve the link as a relative path.
+		"""
+		if relative:
+			parents, points = self >> to
+			target = '../' * parents
+			target += '/'.join(points)
+		else:
+			target = str(to)
+
+		link(target, str(self))
+
+	def init(self, type, mkdir=os.mkdir, exists=os.path.exists):
 		"""
 		Create the filesystem node described by the type parameter at this route.
 		Any directories leading up to the node will be automatically created if
@@ -578,7 +676,9 @@ class File(Route):
 			chdir(cwd)
 
 class Import(Route):
-	"Route for Python packages and modules."
+	"""
+	Route for Python packages and modules.
+	"""
 
 	__slots__ = ('context', 'points',)
 
@@ -641,13 +741,17 @@ class Import(Route):
 
 	@property
 	def fullname(self):
-		"Return the absolute path of the module Route; dot separated module names."
+		"""
+		Return the absolute path of the module Route; dot separated module names.
+		"""
 		# accommodate for Nones
 		return '.'.join(self.absolute)
 
 	@property
 	def basename(self):
-		"The module's name relative to its package; node identifier used to refer to the module."
+		"""
+		The module's name relative to its package; node identifier used to refer to the module.
+		"""
 		if self.points:
 			return self.points[-1]
 		else:
@@ -675,12 +779,16 @@ class Import(Route):
 
 	@property
 	def loader(self):
-		"The loader of the module."
+		"""
+		The loader of the module.
+		"""
 
 		return self.spec().loader
 
 	def spec(self, find_spec=importlib.util.find_spec):
-		"The spec for loading the module."
+		"""
+		The spec for loading the module.
+		"""
 
 		try:
 			return find_spec(self.fullname)
@@ -707,9 +815,9 @@ class Import(Route):
 	def real(self):
 		"""
 		The "real" portion of the Route.
-		Greatest Absolute Route that actually exists.
+		Greatest Absolute Route that *actually exists* on the file system.
 
-		None if no parts are real.
+		&None if no parts are real.
 		"""
 
 		x = self
@@ -770,7 +878,9 @@ class Import(Route):
 		return None # no bottom
 
 	def project(self):
-		"Return the 'project' module of the &bottom package."
+		"""
+		Return the 'project' module of the &bottom package.
+		"""
 
 		bottom = self.bottom()
 		if bottom is not None:
@@ -787,7 +897,9 @@ class Import(Route):
 		return self.__class__(project, tuple(rel))
 
 	def module(self, trap=True, import_module=importlib.import_module):
-		"Return the module that is being referred to by the path."
+		"""
+		Return the module that is being referred to by the path.
+		"""
 
 		try:
 			return import_module(self.fullname)
