@@ -1,19 +1,33 @@
 [ Glossary ]
 
 /Route
-   A path to a "thing". Routes consist of a "datum" and a sequence of "crumbs".
+	A path to a concept defined by the (&)`Subject Space`.
+	Routes consist of a &Context, which is a &Route, and a sequence of &Points.
+	Ultimately, a Route is a mere sequence of identifiers.
 
 /Context
-   The initial part of a Route. Datums are purely an implementation detail used to
-   consolidate commonly used Routes so that repeat use is possible.
+	The beginning of a particular Route. Contexts are used to establish an anchor
+	that operations are performed relative to. Often, the context is irrelevant for many
+	use-cases, but is often used as a conceptual equivalent to the (environment)`PWD`.
+
+	Contexts can also serve user defined semantics. For instance, consider web server
+	routing where the transition point between handlers needs to be recorded. A stack
+	of contexts can be used to ultimately identify the points along the path in which
+	one handler passed the remaining points into the next.
 
 /Points
-   A sequence of identifiers. Identifiers of abstract routes can be anything, but normally they are
-   a file's basename or a module's basename.
-
-/Wolf
-   A feral beast to be feared by man. Wolves are crafty pack hunters.
+	A sequence of identifiers that select a concept relative to the &Context.
+	Identifiers of abstract routes can be any hashable, but normally they are
+	a file's basename or a module's basename.
 
 /Subject Space
-   The graph that the Route refers to.
-   The Selection of a Route is said to exist within the Subject Space.
+	The graph of concepts that the Route refers to.
+	The Selection of a Route is said to exist within the Subject Space.
+
+/Selection
+	The concept identified by &Route.
+	Not all Routes have Selections as &Route instances are an arbitrary
+	sequence of identifiers.
+
+/System
+	The (&)`Subject Space`.

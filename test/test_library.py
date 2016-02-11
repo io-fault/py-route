@@ -514,6 +514,15 @@ def test_Import_from_attributes(test):
 	test/mod == lib.Import.from_fullname(__package__)
 	test/attr == ()
 
+def test_Import_tree(test):
+	pkg = lib.Import.from_fullname(__package__)
+	project = pkg.bottom()
+	pkgs, mods = map(set, project.tree())
+
+	test/((project/'test') in pkgs) == True
+	test/((project/'documentation') in pkgs) == True
+	test/((project/'library') in mods) == True
+
 if __name__ == '__main__':
 	import sys; from ...development import libtest
 	libtest.execute(sys.modules[__name__])

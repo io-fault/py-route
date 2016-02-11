@@ -1,5 +1,46 @@
 """
-File system routes and Python Import routes.
+File system and Python Module routes. Manipulate paths and query the file system.
+
+&.library provides the only functionality of the project. The &File and &Import classes
+allow the management of filesystem and import routes with query methods that can
+interrogate their respective systems. The &Route base class is designed for subclassing;
+the point-sequence manipulation functions and context management allows Routes of different
+types to be defined that share similar semantics with respect to finite identifier selection.
+
+[ File System ]
+
+File systems paths are managed using &File routes. The primary constructor is the
+&File.from_path class method that resolves relative paths based on the current
+working directory:
+
+#!/pl/python
+	route = libroutes.File.from_path('file-in-current-directory')
+
+Normally, Routes are created from class methods, not from type instantiation.
+File systems routes have a number of constructors:
+
+	- &File.from_path
+	- &File.from_absolute
+	- &File.from_relative
+	- &File.from_cwd
+	- &File.temporary
+
+[ Python Module Hierarchy ]
+
+Python modules have their own hierarchy and a special Route class is used in order
+to provide a query set useful for Python modules.
+
+The primary constructor is the &Import.from_fullname class method that builds
+the Route from the module's full path.
+
+#!/pl/python
+	route = libroute.Import.from_fullname('fault.routes.library')
+
+Imports have fewer constructors:
+
+	- &Import.from_fullname
+	- &Import.from_attributes
+	- &Import.from_context
 """
 import os
 import os.path
@@ -211,7 +252,7 @@ class Route(object):
 
 class File(Route):
 	"""
-	Route subclass for file system paths.
+	&Route subclass for file system paths.
 	"""
 	__slots__ = ('context', 'points',)
 
@@ -408,7 +449,11 @@ class File(Route):
 		mode = get_stat(self.fullpath).st_mode
 		return (mode & mask) != 0
 
-	def is_container(self, isdir = os.path.isdir) -> bool:
+	def is_container(self, isdir=os.path.isdir) -> bool:
+		"""
+		Whether or not the &Selection is a directory.
+		"""
+
 		return isdir(self.fullpath)
 
 	def subnodes(self, listdir=os.listdir, isdir=os.path.isdir, join=os.path.join):
@@ -751,21 +796,19 @@ class Import(Route):
 	def basename(self):
 		"""
 		The module's name relative to its package; node identifier used to refer to the module.
+		Alias to &identifier.
 		"""
-		if self.points:
-			return self.points[-1]
-		else:
-			abs = self.absolute
-			if abs:
-				return abs[-1]
-			else:
-				return None
+
+		return self.identifier
 
 	@property
 	def package(self):
 		"""
 		Return a &Route to the module's package.
 		If the &Route is referencing a package, return &self.
+
+		! WARNING:
+			This will be a method.
 		"""
 
 		if self.is_container():
@@ -955,7 +998,7 @@ class Import(Route):
 			pkgsq.extend(sp)
 		return pkgs, mods
 
-	def file(self, from_path = File.from_path):
+	def file(self, from_path=File.from_path, getattr=getattr):
 		"""
 		Get the &File instance pointing to the module's file.
 		"""
@@ -976,7 +1019,7 @@ class Import(Route):
 
 	def cache(self):
 		"""
-		The (fs-point)`__pycache__` directory associated with the module's file.
+		The (filesystem:identifier)`__pycache__` directory associated with the module's file.
 		"""
 
 		return self.directory() / '__pycache__'
