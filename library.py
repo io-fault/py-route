@@ -438,7 +438,11 @@ class File(Route):
 		The kind of node the route points to.
 		"""
 
-		s = stat(self.fullpath)
+		try:
+			s = stat(self.fullpath)
+		except FileNotFoundError:
+			return None
+
 		return type_map[ifmt(s.st_mode)]
 
 	def executable(self, get_stat=os.stat, mask=stat.S_IXUSR|stat.S_IXGRP|stat.S_IXOTH) -> bool:
@@ -455,6 +459,15 @@ class File(Route):
 		"""
 
 		return isdir(self.fullpath)
+
+	def is_regular_file(self):
+		"""
+		Whether or not the &Selection is a regular file.
+
+		Uses &os.stat to query the local file system to discover the type.
+		"""
+
+		return self.type() == 'file'
 
 	def subnodes(self, listdir=os.listdir, isdir=os.path.isdir, join=os.path.join):
 		"""
@@ -554,7 +567,7 @@ class File(Route):
 				return x
 			x = x.container
 
-	def exists(self, exists=os.path.exists) -> bool:
+	def exists(self, exists=os.path.lexists) -> bool:
 		"""
 		Return the part of the File route that actually exists on the File system.
 		"""
@@ -650,7 +663,7 @@ class File(Route):
 
 		link(target, str(self))
 
-	def init(self, type, mkdir=os.mkdir, exists=os.path.exists):
+	def init(self, type, mkdir=os.mkdir, exists=os.path.lexists):
 		"""
 		Create the filesystem node described by the type parameter at this route.
 		Any directories leading up to the node will be automatically created if
