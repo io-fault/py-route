@@ -610,7 +610,7 @@ class File(Route):
 
 		return (unix(st.st_ctime), unix(st.st_mtime), st.st_size)
 
-	def void(self, rmtree = shutil.rmtree, remove = os.remove):
+	def void(self, rmtree = shutil.rmtree, remove=os.remove):
 		"""
 		Remove the entire tree that this Route points to.
 		No file will survive. Unless it's not owned by the user.
@@ -644,7 +644,7 @@ class File(Route):
 		else:
 			copyfile(src, dst)
 
-	def link(self, to:"File", relative=True, link=os.symlink):
+	def link(self, to:"File", relative=True, link=os.symlink, exists=os.path.lexists):
 		"""
 		Create a *symbolic* link at &self pointing to &to, the target file.
 
@@ -661,7 +661,11 @@ class File(Route):
 		else:
 			target = str(to)
 
-		link(target, str(self))
+		dst = str(self)
+		if exists(dst):
+			os.remove(dst)
+
+		link(target, dst)
 
 	def init(self, type, mkdir=os.mkdir, exists=os.path.lexists):
 		"""
