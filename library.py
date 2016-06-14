@@ -1023,7 +1023,7 @@ class Import(Route):
 		path = getattr(self.loader, 'path', None)
 		if path is None:
 			# NamespaceLoader seems inconsistent here.
-			path = self.loader._path._path
+			return None
 		return from_path(path)
 
 	def directory(self):
