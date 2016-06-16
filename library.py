@@ -868,6 +868,9 @@ class Import(Route):
 		Interrogate the module's loader as to whether or not it's a "package module".
 		"""
 
+		if self.spec() is None:
+			return False
+
 		fn = self.fullname
 		return find_loader(fn).is_package(fn)
 	is_package = is_container
