@@ -483,10 +483,10 @@ def test_Import(test):
 		test/x == r.module()
 		r = r.container
 
-	# bottom
+	# floor
 	r = lib.Import.from_fullname(__package__)
-	test/r.bottom() == lib.Import.from_fullname(local)
-	test/r.bottom() == r.bottom().bottom()
+	test/r.floor() == lib.Import.from_fullname(local)
+	test/r.floor() == r.floor().floor()
 
 	# project
 	from .. import project
@@ -507,7 +507,7 @@ def test_Import(test):
 def test_Import_anchor(test):
 	i = lib.Import.from_fullname(__package__)
 	i = i.anchor()
-	test/i.context == i.bottom()
+	test/i.context == i.floor()
 
 def test_Import_from_attributes(test):
 	mod, attr = lib.Import.from_attributes(__package__)
@@ -516,7 +516,7 @@ def test_Import_from_attributes(test):
 
 def test_Import_tree(test):
 	pkg = lib.Import.from_fullname(__package__)
-	project = pkg.bottom()
+	project = pkg.floor()
 	pkgs, mods = map(set, project.tree())
 
 	test/((project/'test') in pkgs) == True
