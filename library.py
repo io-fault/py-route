@@ -150,6 +150,23 @@ class Route(object):
 
 		return self.__class__(self.context, self.points + (next_point,))
 
+	def __mul__(self, parent_replace):
+		"""
+		Select a node adjacent to the container.
+		"""
+		return self.container.container / parent_replace
+
+	def __pow__(self, ancestor):
+		"""
+		Select the n-th ancestor of the route.
+		"""
+		y = self
+		# This is not efficient, but it allows the preservation
+		# of the context.
+		for x in range(ancestor):
+			y = y.container
+		return y
+
 	def extend(self, extension):
 		"""
 		Extend the Route using the given sequence of points.
@@ -161,6 +178,9 @@ class Route(object):
 		"""
 		Return a new &Route with &self's absolute points reversed.
 		The &context is not maintained in the returned instance.
+
+		! WARNING:
+			Tentative interface.
 		"""
 
 		return self.__class__(None, tuple(reversed(self.absolute)))
@@ -1029,6 +1049,7 @@ class Import(Route):
 		if path is None:
 			# NamespaceLoader seems inconsistent here.
 			return None
+
 		return from_path(path)
 
 	def directory(self):

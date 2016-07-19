@@ -39,6 +39,14 @@ def test_Route(test):
 	y = ~x
 	test/id(~y) == id(y)
 
+	# Navigation
+	x = root / 'd1' / 'd2' / 'f1'
+	test/(x * 'null').absolute == (x.container.container.absolute + ('null',))
+	test/(x ** 0) == x
+	test/(x ** 1) == x.container
+	test/(x ** 2) == x.container.container
+	test/(x ** 3) == x.container.container.container
+
 	s3 = subsub / 'third'
 	test/s3.absolute == ('first', 'second', 'third')
 	s5 = s3.extend(['fourth', 'fifth'])
