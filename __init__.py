@@ -18,7 +18,7 @@ of system managing nodes.
 
 [ File System ]
 
-/*Modification Time*
+/Modification Time
 	&.library.File.last_modified
 	#!/pl/python
 		mod_time = cat_exe.last_modified()
@@ -27,12 +27,12 @@ of system managing nodes.
 	#!/pl/python
 		modified_files = etc_dir.since(libtime.now().rollback(hour=1))
 
-/*Size*
+/Size
 	&.library.File.size
 	#!/pl/python
 		binary_size = cat_exe.size()
 
-/*Type*
+/Type
 	&.library.File.type
 	#!/pl/python
 		assert cat_exe.type() == 'executable'
