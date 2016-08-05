@@ -84,12 +84,14 @@ class Route(object):
 	def __rshift__(self, target, predicate=operator.eq,
 			takewhile=itertools.takewhile,
 			zip=zip,
+			sum=sum,
+			len=len,
 		) -> (int, tuple):
 		"""
 		Construct a sequence of points identifying the &target relative to &self.
 
 		Essentially, find the common prefix and note the number of containers between
-		it and &self. Subsequentl, get the points necessary to select the target from
+		it and &self. Subsequently, get the points necessary to select the target from
 		that common prefix.
 		"""
 
@@ -103,13 +105,15 @@ class Route(object):
 		return containers, tuple(target_path[top:])
 
 	def __lshift__(self, target):
+		"""
+		Parameter inversion of &__rshift__.
+		"""
 		return target >> self
 
 	def __hash__(self):
 		"""
 		Hash on the &absolute of the Route allowing consistency regardless of context.
 		"""
-
 		return hash(self.absolute)
 
 	def __eq__(self, ob, isinstance=isinstance):
@@ -124,8 +128,8 @@ class Route(object):
 		if isinstance(ob, self.__class__):
 			return self.absolute < ob.absolute
 
-	def __contains__(self, abs):
-		return abs.points[:len(self.points)] == self.points
+	def __contains__(self, absolute):
+		return absolute.points[:len(self.points)] == self.points
 
 	def __getitem__(self, req):
 		"""
@@ -147,14 +151,13 @@ class Route(object):
 		"""
 		Extend the Route by one point.
 		"""
-
 		return self.__class__(self.context, self.points + (next_point,))
 
-	def __mul__(self, parent_replace):
+	def __mul__(self, replacement):
 		"""
-		Select a node adjacent to the container.
+		Select a node adjacent to the selection.
 		"""
-		return self.container.container / parent_replace
+		return self.container / replacement
 
 	def __pow__(self, ancestor):
 		"""
