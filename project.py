@@ -3,6 +3,7 @@ name = 'routes'
 abstract = 'Filesystem and module path manipulation tools'
 icon = '🚏'
 
+versioning = 'continuous'
 fork = 'deadend'
 status = 'flux'
 
