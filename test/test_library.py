@@ -267,7 +267,7 @@ def test_File_size(test):
 	test/f3.size() == 3
 	test/f4.size() == 4
 
-def test_File_last_modified(test):
+def test_File_get_last_modified(test):
 	"""
 	System check.
 	"""
@@ -280,7 +280,7 @@ def test_File_last_modified(test):
 
 		test/r.exists() == True
 
-		mtime1 = r.last_modified()
+		mtime1 = r.get_last_modified()
 		time.sleep(1.1)
 		# sleep one whole second in case the filesystem's
 		# precision is at the one second mark.
@@ -288,7 +288,7 @@ def test_File_last_modified(test):
 		with r.open('a') as f:
 			f.write('appended\n')
 
-		mtime2 = r.last_modified()
+		mtime2 = r.get_last_modified()
 
 	test/mtime2 > mtime1
 	test/mtime1.measure(mtime2) >= lib.libtime.Measure.of(second=1)
@@ -530,6 +530,11 @@ def test_Import_tree(test):
 	test/((project/'test') in pkgs) == True
 	test/((project/'documentation') in pkgs) == True
 	test/((project/'library') in mods) == True
+
+def test_Import_get_last_modified(test):
+	# This is essentally the implementation; the method is mere convenience.
+	pkg = lib.Import.from_fullname(__package__)
+	test/pkg.file().get_last_modified() == pkg.get_last_modified()
 
 if __name__ == '__main__':
 	import sys; from ...development import libtest
