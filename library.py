@@ -155,13 +155,17 @@ class Route(object):
 
 	def __mul__(self, replacement):
 		"""
-		Select a node adjacent to the selection.
+		Select a node adjacent to the current selection.
+
+		Returns a new &Route.
 		"""
 		return self.container / replacement
 
-	def __pow__(self, ancestor):
+	def __pow__(self, ancestor:int):
 		"""
 		Select the n-th ancestor of the route.
+
+		Returns a new &Route.
 		"""
 		y = self
 		# This is not efficient, but it allows the preservation
@@ -458,7 +462,17 @@ class File(Route):
 
 	def type(self, ifmt=stat.S_IFMT, stat=os.stat, type_map=_type_map) -> str:
 		"""
-		The kind of node the route points to.
+		The kind of node the route points to. Transforms the result of an &os.stat
+		call into a string describing the (python:attribute)`st_mode` field.
+
+		[Effects]
+		/Product
+			- `'pipe'`
+			- `'link'`
+			- `'file'`
+			- `'directory'`
+			- `'socket'`
+			- `'device'`
 		"""
 
 		try:
@@ -482,6 +496,7 @@ class File(Route):
 		"""
 
 		return isdir(self.fullpath)
+	is_directory = is_container
 
 	def is_regular_file(self):
 		"""
@@ -599,7 +614,7 @@ class File(Route):
 
 	def size(self, stat=os.stat) -> int:
 		"""
-		Return the size of the file as depicted by &/unix/man/2/stat.
+		Return the size of the file as depicted by &os.stat.
 
 		The &os.stat function is used to get the information.
 		&None is returned if an &OSError is raised by the call.
@@ -607,19 +622,20 @@ class File(Route):
 
 		return stat(self.fullpath, follow_symlinks=True).st_size
 
-	def last_modified(self, stat=os.stat, unix=libtime.unix) -> libtime.Timestamp:
+	def get_last_modified(self, stat=os.stat, unix=libtime.unix) -> libtime.Timestamp:
 		"""
 		Return the modification time of the file.
 		"""
 
 		return unix(stat(self.fullpath).st_mtime)
+	last_modified = get_last_modified
 
 	def set_last_modified(self, time:libtime.Timestamp, utime=os.utime):
 		"""
 		Set the modification time of the file identified by the &Route.
 		"""
 
-		return utime(str(self), (-1, time.select('unix')/1000))
+		return utime(self.__str__(), (-1, time.select('unix')/1000))
 
 	def meta(self):
 		"""
@@ -915,12 +931,12 @@ class Import(Route):
 				pass
 			x = x.container
 
-	def last_modified(self, stat=os.stat, unix=libtime.unix) -> libtime.Timestamp:
+	def get_last_modified(self, stat=os.stat, unix=libtime.unix) -> libtime.Timestamp:
 		"""
 		Return the modification time of the module's file as a chronometry Timestamp.
 		"""
-
-		return unix(stat(self.module().__file__).st_mtime)
+		return self.file().get_last_modified()
+	last_modified = get_last_modified
 
 	def stack(self):
 		"""
