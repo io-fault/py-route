@@ -760,19 +760,48 @@ class File(Route):
 		finally:
 			pass
 
-	@contextlib.contextmanager
-	def cwd(self, chdir=os.chdir, getcwd=os.getcwd):
+	def load(self, mode='rb') -> bytes:
 		"""
-		Use the &File route as the current working directory within the context.
-		On exit, restore the current working directory to that the operating system
-		reported.
+		Open the file, and return the entire contents as a &bytes instance.
+		If the file does not exist, an *empty bytes instance* is returned.
+
+		Unlike &store, this will not initialize the file.
+		"""
+		if not self.exists():
+			return b''
+
+		with self.open(mode) as f:
+			return f.read()
+
+	def store(self, data:bytes, mode='wb'):
+		"""
+		Given a &bytes instance, &data, store the contents at the location referenced
+		by the &Route. If the file does not exist, *it will be created* along with
+		the leading directories.
+		"""
+		with self.open(mode) as f:
+			return f.write(data)
+
+	@contextlib.contextmanager
+	def cwd(self, chdir=os.chdir, getcwd=os.getcwd) -> 'File':
+		"""
+		Context manager using the &File route as the current working directory within the
+		context. On exit, restore the current working directory to that the operating system
+		reported:
+
+			#!/pl/python
+				root = libroutes.File.from_absolute('/')
+				with root.cwd() as oldcwd:
+					...
+
+		The old current working directory is yielded as a &File instance.
 		"""
 
 		cwd = getcwd()
 
 		try:
-			chdir(str(self))
-			yield None
+			chdir(self.fullpath)
+			yield self.from_absolute(cwd)
 		finally:
 			chdir(cwd)
 
