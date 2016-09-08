@@ -1,10 +1,10 @@
-identity = 'http://fault.io/python/fault.routes'
+identity = 'http://fault.io/python/routes'
 name = 'routes'
 abstract = 'Filesystem and module path manipulation tools'
 icon = '🚏'
 
-versioning = 'continuous'
 fork = 'deadend'
+versioning = 'continuous'
 status = 'flux'
 
 controller = 'fault.io'
