@@ -1068,6 +1068,12 @@ class Import(Route):
 				for (importer, name, ispkg) in iter_modules(path) if path is not None else ():
 					path = '.'.join((prefix, name))
 					ir = self.__class__.from_fullname(path)
+
+					# Filter entries identified as being a Python module,
+					# but are not regular files or do not exist.
+					if ir.file().type() != 'file':
+						continue
+
 					if ispkg:
 						packages.append(ir)
 					else:
