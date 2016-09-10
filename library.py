@@ -829,9 +829,17 @@ class Import(Route):
 	@classmethod
 	def from_fullname(Class, s):
 		"""
-		Given an absolute module path, return a Pointer instance to that path.
+		Given a valid `__name__`, return an &Import instance to that path.
 		"""
 		return Class.from_points(None, *s.split('.'))
+
+	@classmethod
+	def from_module(Class, module):
+		"""
+		Given module containing a valid `__name__`, return an &Import
+		instance to that path.
+		"""
+		return Class(None, tuple(module.__name__.split('.')))
 
 	@classmethod
 	def from_points(Class, context, *points):
