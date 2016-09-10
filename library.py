@@ -661,9 +661,9 @@ class File(Route):
 			else:
 				remove(self.fullpath)
 
-	def replace(self, replacement:"File", copytree=shutil.copytree, copyfile=shutil.copyfile):
+	def replace(self, replacement:"File", copytree=shutil.copytree, copyfile=shutil.copy):
 		"""
-		Drop the existing file or directory and replace it with the
+		Drop the existing file or directory, &self, and replace it with the
 		file or directory at the given route, &replacement.
 
 		[ Parameters ]
@@ -679,7 +679,7 @@ class File(Route):
 		dst = self.fullpath
 
 		if replacement.is_container():
-			copytree(src, dst)
+			copytree(src, dst, symlinks=True, copy_function=copyfile)
 		else:
 			copyfile(src, dst)
 
