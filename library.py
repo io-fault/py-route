@@ -11,7 +11,7 @@ types to be defined that share similar semantics with respect to finite identifi
 
 File systems paths are managed using &File routes. The primary constructor is the
 &File.from_path class method that resolves relative paths based on the current
-working directory:
+working directory of the process:
 
 #!/pl/python
 	route = libroutes.File.from_path('file-in-current-directory')
@@ -41,6 +41,11 @@ Imports have fewer constructors:
 	- &Import.from_fullname
 	- &Import.from_attributes
 	- &Import.from_context
+
+[ Abstract Routes ]
+
+&Route provides a base class for managing an arbitrary route. The primary requirement
+being that the points along the route should be hashable.
 """
 import os
 import os.path
