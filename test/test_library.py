@@ -536,6 +536,12 @@ def test_Import_get_last_modified(test):
 	pkg = lib.Import.from_fullname(__package__)
 	test/pkg.file().get_last_modified() == pkg.get_last_modified()
 
+def test_Import_subnodes(test):
+	"""
+	Test the filtering and functionality of &library.Import.subnodes.
+	"""
+	test.skip("not implemented")
+
 if __name__ == '__main__':
 	import sys; from ...development import libtest
 	libtest.execute(sys.modules[__name__])
