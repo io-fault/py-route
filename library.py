@@ -1076,7 +1076,10 @@ class Import(Route):
 
 					# Filter entries identified as being a Python module,
 					# but are not regular files or do not exist.
-					if ir.file().type() != 'file':
+					if ir.spec() is None or ir.file().type() != 'file':
+						# This applies to package modules as well as
+						# the __init__.py file should be available saving
+						# a namespace loader.
 						continue
 
 					if ispkg:
