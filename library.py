@@ -677,7 +677,6 @@ class File(Route):
 			The route to the file or directory that will be used to replace
 			the one at &self.
 		"""
-		global shutil
 
 		self.void()
 		src = replacement.fullpath
@@ -698,6 +697,7 @@ class File(Route):
 		/relative
 			Whether or not to resolve the link as a relative path.
 		"""
+
 		if relative:
 			parents, points = self >> to
 			target = '../' * parents
