@@ -642,7 +642,7 @@ class File(Route):
 
 		return utime(self.__str__(), (-1, time.select('unix')/1000))
 
-	def meta(self):
+	def meta(self, stat=os.stat, unix=libtime.unix):
 		"""
 		Return file specific meta data.
 
