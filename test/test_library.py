@@ -17,7 +17,7 @@ def test_inconsistent_type_equality(test):
 
 def test_Route(test):
 	"""
-	Test all of the Route base class methods and properties manipulating the context and points.
+	# Test all of the Route base class methods and properties manipulating the context and points.
 	"""
 	Type = lib.Route
 	root = Type(None, ())
@@ -81,7 +81,7 @@ def test_Route(test):
 
 def test_Route_relative_resolution(test):
 	"""
-	Check relative path resolution.
+	# Check relative path resolution.
 	"""
 	Function = lib.Route._relative_resolution
 	test/Function(('first', '.', 'second')) == ['first', 'second']
@@ -91,7 +91,7 @@ def test_Route_relative_resolution(test):
 
 def test_Route_path(test):
 	"""
-	Test &lib.Route.path.
+	# Test &lib.Route.path.
 	"""
 	Type = lib.Route
 	common = Type(None, ('prefix', 'common'))
@@ -155,7 +155,7 @@ def test_File_temporary(test):
 
 def test_File_tree(test):
 	"""
-	Test &lib.File.tree and &lib.File.subnodes
+	# Test &lib.File.tree and &lib.File.subnodes
 	"""
 
 	with lib.File.temporary() as t:
@@ -179,7 +179,7 @@ def test_File_tree(test):
 
 def test_File_real(test):
 	"""
-	Test &lib.File.real
+	# Test &lib.File.real
 	"""
 	with lib.File.temporary() as t:
 		f = t/'doesnotexist'
@@ -225,8 +225,8 @@ def test_File_cwd(test):
 
 def test_File_init(test):
 	"""
-	Test &lib.File.init checking that the parent directories are
-	properly created regardless of the selected type.
+	# Test &lib.File.init checking that the parent directories are
+	# properly created regardless of the selected type.
 	"""
 
 	with lib.File.temporary() as t:
@@ -269,7 +269,7 @@ def test_File_size(test):
 
 def test_File_get_last_modified(test):
 	"""
-	System check.
+	# System check.
 	"""
 	import time
 
@@ -295,7 +295,7 @@ def test_File_get_last_modified(test):
 
 def test_File_set_last_modified(test):
 	"""
-	System check.
+	# System check.
 	"""
 
 	with lib.File.temporary() as d:
@@ -316,7 +316,7 @@ def test_File_set_last_modified(test):
 
 def test_File_since(test):
 	"""
-	&lib.File.since
+	# &lib.File.since
 	"""
 
 	with lib.File.temporary() as root:
@@ -339,7 +339,7 @@ def test_File_since(test):
 
 def test_File_construct(test):
 	"""
-	Test the various classmethods that construct file instances.
+	# Test the various classmethods that construct file instances.
 	"""
 
 	test/str(lib.File.from_absolute('/')) == '/'
@@ -387,7 +387,7 @@ def test_File_properties(test):
 
 def test_File_void(test):
 	"""
-	File.void operation.
+	# File.void operation.
 	"""
 
 	with lib.File.temporary() as d:
@@ -411,7 +411,7 @@ def test_File_void(test):
 
 def test_File_link(test):
 	"""
-	Test &lib.File.symbolic_link.
+	# Test &lib.File.symbolic_link.
 	"""
 	with lib.File.temporary() as t:
 		target = t / 'file'
@@ -443,7 +443,7 @@ def test_File_link(test):
 
 def test_File_recursive_since(test):
 	"""
-	&lib.File.since with recursive directories.
+	# &lib.File.since with recursive directories.
 	"""
 	import itertools
 	ago10mins = lib.libtime.now().rollback(minute=10)
@@ -538,7 +538,7 @@ def test_Import_get_last_modified(test):
 
 def test_Import_subnodes(test):
 	"""
-	Test the filtering and functionality of &library.Import.subnodes.
+	# Test the filtering and functionality of &library.Import.subnodes.
 	"""
 	test.skip("not implemented")
 
