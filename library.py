@@ -961,7 +961,7 @@ class Import(Route):
 		# The "real" portion of the Route.
 		# Greatest Absolute Route that *actually exists* on the file system.
 
-		# &None if no parts are real.
+		# &None if no parts are real, and &self if the entire route exists.
 		"""
 
 		x = self
