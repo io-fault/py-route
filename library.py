@@ -172,6 +172,7 @@ class Route(object):
 
 		# Returns a new &Route.
 		"""
+
 		y = self
 		# This is not efficient, but it allows the preservation
 		# of the context.
@@ -1105,7 +1106,7 @@ class Import(Route):
 
 	def tree(self, deque = collections.deque):
 		"""
-		# Return a package's full tree.
+		# Return a package's full tree as a pair of lists.
 		"""
 
 		pkgs, mods = self.subnodes()
