@@ -222,6 +222,14 @@ class Route(object):
 		return r
 
 	@property
+	def relative(self):
+		"""
+		# The sequence of points relative to the context.
+		# Synonym for the &points property.
+		"""
+		return self.points
+
+	@property
 	def identifier(self):
 		"""
 		# The identifier of the node relative to its container. (Head)
