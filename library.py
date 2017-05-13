@@ -294,6 +294,8 @@ class File(Route):
 	"""
 	# &Route subclass for file system paths.
 	"""
+	_path_separator = os.path.sep
+
 	__slots__ = ('context', 'points',)
 
 	@classmethod
@@ -324,13 +326,17 @@ class File(Route):
 		# returned by &os.getcwd; if this is desired, &from_path is the
 		# appropriate constructor to use.
 		"""
+		s = Class._path_separator
 
-		points = Class._relative_resolution(chain(context.absolute, path.strip('/').split('/')))
+		points = Class._relative_resolution(chain(
+			context.absolute,
+			path.strip(s).split(s)
+		))
 		return Class(None, tuple(points))
 
 	@classmethod
-	def from_absolute(Class, path:str, sep=os.path.sep, tuple=tuple) -> "File":
-		return Class(None, tuple(x for x in path.split(sep) if x))
+	def from_absolute(Class, path:str, tuple=tuple) -> "File":
+		return Class(None, tuple(x for x in path.split(Class._path_separator) if x))
 
 	@classmethod
 	def from_cwd(Class, *points:str, getcwd=os.getcwd) -> "File":
