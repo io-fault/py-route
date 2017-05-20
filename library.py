@@ -485,14 +485,13 @@ class File(Route):
 		# The kind of node the route points to. Transforms the result of an &os.stat
 		# call into a string describing the (python:attribute)`st_mode` field.
 
-		# [Effects]
-		# /Product
-			# - `'pipe'`
-			# - `'link'`
-			# - `'file'`
-			# - `'directory'`
-			# - `'socket'`
-			# - `'device'`
+		# [ Returns ]
+		# - `'pipe'`
+		# - `'link'`
+		# - `'file'`
+		# - `'directory'`
+		# - `'socket'`
+		# - `'device'`
 		"""
 
 		try:
