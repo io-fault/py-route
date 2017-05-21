@@ -1,14 +1,16 @@
 [ Glossary ]
 
 /Route
-	A path to a concept defined by the (&)`Subject Space`.
-	Routes consist of a &Context, which is a &Route, and a sequence of &Points.
-	Ultimately, a Route is a mere sequence of identifiers.
+	A path, real or imaginary, to a concept defined by the (term)`Subject Space`.
+	Routes consist of a &Context and a sequence of &Points.
+	Ultimately, a Route is a mere sequence of identifiers. However, identifiers
+	can be complex allowing predicates.
 
 /Context
 	The beginning of a particular Route. Contexts are used to establish an anchor
 	that operations are performed relative to. Often, the context is irrelevant for many
-	use-cases, but is often used as a conceptual equivalent to the (environment)`PWD`.
+	use-cases, but is often used as a conceptual equivalent to the
+	(system/environment)`PWD`.
 
 	Contexts can also serve user defined semantics. For instance, consider web server
 	routing where the transition point between handlers needs to be recorded. A stack
@@ -24,10 +26,15 @@
 	The graph of concepts that the Route refers to.
 	The Selection of a Route is said to exist within the Subject Space.
 
+/Node
+	A real object in the (term)`Subject Space`. A (term)`Route` *refers*
+	to a Node. Routes consisting of identifiers independent of the
+	(term)`Subject Space` may refer to Nodes that do not exist.
+
 /Selection
 	The concept identified by &Route.
 	Not all Routes have Selections as &Route instances are an arbitrary
 	sequence of identifiers.
 
 /System
-	The (&)`Subject Space`.
+	The (term)`Subject Space`.
