@@ -421,7 +421,10 @@ def test_File_link(test):
 		# Relative Mode
 		sym = t / 'symbolic'
 		test/sym.exists() == False
+		test/sym.is_link() == False
 		sym.link(target)
+		test/sym.is_link() == True
+
 		test/sym.exists() == True
 		with sym.open('rb') as f:
 			test/f.read() == b'test file'
@@ -438,6 +441,7 @@ def test_File_link(test):
 		dst.init('file')
 		dst.void()
 		dst.link(src)
+		test/dst.is_link() == True
 		with dst.open('rb') as f:
 			test/f.read() == b'source data'
 

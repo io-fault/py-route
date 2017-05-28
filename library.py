@@ -526,6 +526,17 @@ class File(Route):
 
 		return self.type() == 'file'
 
+	def is_link(self, islink=os.path.islink):
+		"""
+		# Whether the Route refers to a symbolic link.
+		# Returns &False in the case of a nonexistent file.
+		"""
+
+		try:
+			return islink(self.fullpath)
+		except FileNotFoundError:
+			return False
+
 	def subnodes(self, listdir=os.listdir, isdir=os.path.isdir, join=os.path.join):
 		"""
 		# Return a pair of lists, the first being a list of Routes to
