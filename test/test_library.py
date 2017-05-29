@@ -428,6 +428,10 @@ def test_File_link(test):
 		test/sym.exists() == True
 		with sym.open('rb') as f:
 			test/f.read() == b'test file'
+		target.void()
+		test/target.exists() == False
+		test/sym.exists() == False
+		test/sym.is_link() == True
 
 		common = t / 'dir' / 'subdir'
 		common.init('directory')

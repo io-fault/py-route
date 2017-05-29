@@ -520,7 +520,6 @@ class File(Route):
 	def is_regular_file(self):
 		"""
 		# Whether or not the &Selection is a regular file.
-
 		# Uses &os.stat to query the local file system to discover the type.
 		"""
 
@@ -635,9 +634,11 @@ class File(Route):
 				return x
 			x = x.container
 
-	def exists(self, exists=os.path.lexists) -> bool:
+	def exists(self, exists=os.path.exists) -> bool:
 		"""
-		# Return the part of the File route that actually exists on the File system.
+		# Query the filesystem and return whether or not the file exists.
+
+		# A Route to a symbolic link *will* return &False if the target does not exist.
 		"""
 
 		return exists(self.fullpath)
@@ -685,8 +686,10 @@ class File(Route):
 		# No file will survive. Unless it's not owned by the user.
 		"""
 
-		if self.exists():
-			if self.is_container():
+		if self.is_link():
+			remove(self.fullpath)
+		elif self.exists():
+			if self.is_directory():
 				rmtree(self.fullpath)
 			else:
 				remove(self.fullpath)
@@ -707,7 +710,7 @@ class File(Route):
 		src = replacement.fullpath
 		dst = self.fullpath
 
-		if replacement.is_container():
+		if replacement.is_directory():
 			copytree(src, dst, symlinks=True, copy_function=copyfile)
 		else:
 			copyfile(src, dst)
