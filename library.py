@@ -492,6 +492,9 @@ class File(Route):
 		# - `'directory'`
 		# - `'socket'`
 		# - `'device'`
+		# - &None
+
+		# Where &None means the route does not exist or is not accessible.
 		"""
 
 		try:
