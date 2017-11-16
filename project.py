@@ -1,4 +1,4 @@
-identity = 'http://fault.io/python/routes'
+identity = 'http://fault.io/src/python/routes'
 name = 'routes'
 abstract = 'Filesystem and module path manipulation tools'
 icon = '🚏'
