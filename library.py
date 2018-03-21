@@ -166,7 +166,7 @@ class Route(object):
 		"""
 		return self.container / replacement
 
-	def __pow__(self, ancestor:int):
+	def __pow__(self, ancestor:int, range=range):
 		"""
 		# Select the n-th ancestor of the route.
 
