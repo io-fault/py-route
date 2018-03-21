@@ -683,19 +683,22 @@ class File(Route):
 
 		return (unix(st.st_ctime), unix(st.st_mtime), st.st_size)
 
-	def void(self, rmtree = shutil.rmtree, remove=os.remove):
+	def void(self, rmtree=shutil.rmtree, remove=os.remove):
 		"""
-		# Remove the entire tree that this Route points to.
+		# Remove the entire tree or file that this &Route points to.
 		# No file will survive. Unless it's not owned by the user.
+
+		# If the Route refers to a symbolic link, only the link file will be removed.
 		"""
+		fp = self.fullpath
 
 		if self.is_link():
-			remove(self.fullpath)
+			remove(fp)
 		elif self.exists():
 			if self.is_directory():
-				rmtree(self.fullpath)
+				rmtree(fp)
 			else:
-				remove(self.fullpath)
+				remove(fp)
 
 	def replace(self, replacement:"File", copytree=shutil.copytree, copyfile=shutil.copy):
 		"""
