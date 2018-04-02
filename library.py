@@ -912,6 +912,14 @@ class Import(Route):
 		attributes = path[len(str(module))+1:]
 		return module, tuple(attributes.split('.') if attributes else ())
 
+	@classmethod
+	def dereference(Class, path):
+		o, a = Class.from_attributes(path)
+		o = o.module(trap=False)
+		for x in a:
+			o = getattr(o, x)
+		return o
+
 	def __bool__(self):
 		return any((self.context, self.points))
 
