@@ -568,6 +568,20 @@ class File(Route):
 
 		return directories, files
 
+	def subdirectories(self):
+		"""
+		# Query the file system and return a sequences of routes to directories
+		# contained by &self. If &self is not a directory or contains no directories,
+		# an empty list will be returned.
+		"""
+		return self.subnodes()[0]
+
+	def files(self):
+		"""
+		# Query the file system returning non-directory nodes contained by the directory &self.
+		"""
+		return self.subnodes()[1]
+
 	def tree(self, Queue=collections.deque):
 		"""
 		# Return a directory's full tree as a pair of lists of &File
