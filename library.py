@@ -362,7 +362,7 @@ class File(Route):
 
 	@classmethod
 	@contextlib.contextmanager
-	def temporary(Class, TemporaryDirectory=tempfile.TemporaryDirectory) -> Route:
+	def temporary(Class, TemporaryDirectory=tempfile.mkdtemp) -> Route:
 		"""
 		# Create a temporary directory at the route using a context manager.
 		# This is a wrapper around &tempfile.TemporaryDirectory that returns a &Route.
@@ -375,8 +375,12 @@ class File(Route):
 		# files inside the directory.
 		"""
 
-		with TemporaryDirectory() as d:
-			yield Class(Class.from_absolute(d), ())
+		d = TemporaryDirectory()
+		try:
+			r = Class.from_absolute(d)
+			yield Class(r, ())
+		finally:
+			r.void()
 
 	@classmethod
 	def which(Class, exe, dirname=os.path.dirname) -> "File":
