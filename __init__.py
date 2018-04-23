@@ -10,7 +10,7 @@
 # of connected system managing the Real Nodes.
 
 #!/pl/python
-	from fault.chronometry import library as libtime
+	from fault.time import library as libtime
 	from fault.routes import library as libroutes
 
 	cat_exe = libroutes.File.from_absolute('/bin/cat')

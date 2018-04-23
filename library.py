@@ -62,7 +62,7 @@ import itertools
 import functools
 import operator
 
-from ..chronometry import library as libtime # Import needs to be delayed somehow.
+from ..time import library as libtime # Import needs to be delayed somehow.
 
 @functools.total_ordering
 class Route(object):
