@@ -1,0 +1,19 @@
+/source/
+	`http://fault.io/src/python/routes`
+/name/
+	`routes`
+/abstract/
+	`Filesystem and module path manipulation tools`
+/icon/
+	`🚏`
+
+/versioning/
+	`continuous`
+/status/
+	`flux`
+
+/controller/
+	`fault.io`
+/contact/
+	`mailto:critical@fault.io`
+
