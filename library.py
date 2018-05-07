@@ -487,7 +487,7 @@ class File(Route):
 	def type(self, ifmt=stat.S_IFMT, stat=os.stat, type_map=_type_map) -> str:
 		"""
 		# The kind of node the route points to. Transforms the result of an &os.stat
-		# call into a string describing the (python:attribute)`st_mode` field.
+		# call into a string describing the (python/attribute)`st_mode` field.
 
 		# [ Returns ]
 		# - `'pipe'`
@@ -864,7 +864,7 @@ class File(Route):
 
 class Import(Route):
 	"""
-	# Route for Python packages and modules.
+	# Route for Python imports.
 	"""
 
 	__slots__ = ('context', 'points',)
