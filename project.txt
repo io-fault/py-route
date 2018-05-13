@@ -1,11 +1,15 @@
-/source/
-	`http://fault.io/src/python/routes`
+! CONTEXT:
+	/protocol/
+		&<http://if.fault.io/project>
+
+/identifier/
+	`http://fault.io/python/routes`
 /name/
 	`routes`
 /abstract/
-	`Filesystem and module path manipulation tools`
+	Filesystem and module path manipulation tools
 /icon/
-	`🚏`
+	- (emoji)`🚏`
 
 /versioning/
 	`continuous`
