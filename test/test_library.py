@@ -314,6 +314,29 @@ def test_File_set_last_modified(test):
 		test/new_time != original_time
 		test/new_time.truncate('second') == ttime.truncate('second')
 
+def test_File_get_text_content(test):
+	"""
+	# Validate &lib.File.get_text_content.
+	"""
+
+	d = test.exits.enter_context(lib.File.temporary())
+	r = d / 'tf'
+	with open(str(r), 'w', encoding='utf-8') as f:
+		f.write("data\n")
+	test/r.exists() == True # sanity
+	test/r.get_text_content() == "data\n"
+
+def test_File_set_text_content(test):
+	"""
+	# Validate &lib.File.set_text_content.
+	"""
+
+	d = test.exits.enter_context(lib.File.temporary())
+	r = d / 'tf'
+	test/r.set_text_content("data\n")
+	with open(str(r), encoding='utf-8') as f:
+		test/f.read() == "data\n"
+
 def test_File_since(test):
 	"""
 	# &lib.File.since
