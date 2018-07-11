@@ -65,14 +65,18 @@ import operator
 from ..time import library as libtime # Import needs to be delayed somehow.
 
 @functools.total_ordering
-class Route(object):
+class PartitionedSequence(object):
 	"""
-	# Route base class.
+	# Route implementation class managing the path as a partitioned sequence.
 
-	# Provides generic manipulation methods.
+	# The stored sequences are usually tuples that are connected to a Context
+	# instance defining the preceeding points in the path. The intent of the
+	# structure is to allow path sharing for reducing memory use when working
+	# with long paths. However, this is not done automatically and the exact
+	# usage must be aware of how &context can eliminate redundant leading segments.
 	"""
 
-	def __init__(self, context:object, points:tuple):
+	def __init__(self, context:"PartitionedSequence", points:tuple):
 		self.context = context
 		self.points = points
 
@@ -290,6 +294,34 @@ class Route(object):
 				del rob[-parent_count:]
 
 		return rob
+
+class Route(PartitionedSequence):
+	"""
+	# Route domain base class.
+	"""
+
+class Segment(PartitionedSequence):
+	"""
+	# A path segment used to refer to a series of points in a &Route out-of-context.
+	"""
+
+	__slots__ = ('context', 'points',)
+
+	def __str__(self):
+		return (">>".join(self.absolute))
+
+	def __repr__(self):
+		return "%s.%s.from_sequence(%r)" %(__name__, self.__class__.__name__, self.absolute)
+
+	@classmethod
+	def from_sequence(Class, points):
+		return Class(None, tuple(points))
+
+	def __sub__(self, removed:"Segment") -> "Segment":
+		n = len(removed)
+		if n and self.points[-n:] == removed:
+			return self.__class__(self.context, self.points[:-n])
+		return self
 
 class File(Route):
 	"""
