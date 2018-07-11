@@ -147,11 +147,11 @@ def test_File_temporary(test):
 		path = t.fullpath
 		test/os.path.exists(path) == True
 		test/t.is_container() == True
-		test/t.last_modified() != None
+		test/t.get_last_modified() != None
 
 	# temporary context over, should not exist.
 	test/os.path.exists(path) == False
-	test/OSError ^ t.last_modified
+	test/OSError ^ t.get_last_modified
 
 def test_File_tree(test):
 	"""
@@ -304,12 +304,12 @@ def test_File_set_last_modified(test):
 			f.write('data\n')
 
 		test/r.exists() == True
-		original_time = r.last_modified()
+		original_time = r.get_last_modified()
 
 		ttime = lib.libtime.now().update('minute', -10, 'hour')
 
 		r.set_last_modified(ttime)
-		new_time = r.last_modified()
+		new_time = r.get_last_modified()
 
 		test/new_time != original_time
 		test/new_time.truncate('second') == ttime.truncate('second')
@@ -351,7 +351,7 @@ def test_File_since(test):
 		for x in files:
 			x.init('file')
 
-		times = [x.last_modified() for x in files]
+		times = [x.get_last_modified() for x in files]
 		times.sort(reverse=True)
 		y = times[0]
 
@@ -531,7 +531,7 @@ def test_Import(test):
 	from .. import project
 	r = lib.Import.from_fullname(__package__)
 	test/r.project() == project
-	test/r.last_modified() != None
+	test/r.get_last_modified() != None
 
 	# module that does not exist
 	r = lib.Import.from_fullname('+++++nosuch_module')
