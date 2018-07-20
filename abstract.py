@@ -1,24 +1,21 @@
 """
-# Route interface specifiation.
+# Route Protocols
 """
 import abc
+import typing
 import collections.abc
 
-class Resource(metaclass=abc.ABCMeta):
+@collections.abc.Hashable.register
+class Selectors(metaclass=abc.ABCMeta):
 	"""
-	# An arbitrary object or representation that a Route points to.
+	# An abstract series of identifiers. The common protocol between &Route and &Segment
 	"""
 
-@collections.abc.Hashable.register
-class Route(metaclass=abc.ABCMeta):
-	"""
-	# An abstract path to a &Resource.
-	"""
 	@property
 	@abc.abstractmethod
 	def context(self):
 		"""
-		# The &:route that this Route is relative to; &None if the route isn't anchored
+		# The &Route that this Route is relative to; &None if the route isn't anchored
 		# to a particular Context.
 		"""
 
@@ -27,17 +24,21 @@ class Route(metaclass=abc.ABCMeta):
 	def points(self):
 		"""
 		# Tuple of *relative* nodes in the Route. Points are hashable identifiers used to
-		# access the &:selection. This does not include the points in the &context.
+		# access the Selected Resource. This does not include the points in the &context.
+		"""
+
+	@property
+	@abc.abstractmethod
+	def container(self):
+		"""
+		# Return a Route to the outer Route. This will cross &context boundaries.
 		"""
 
 	@property
 	@abc.abstractmethod
 	def absolute(self):
 		"""
-		# The absolute sequence of points relative to the hierarchy true root.
-		# Conceptually, tuple(&context) + tuple(&points).
-
-		# When use of the &context as an axis is no longer desired, this property should be accessed.
+		# The absolute sequence of points relative to the hierarchy's true root.
 		"""
 
 	@property
@@ -50,7 +51,7 @@ class Route(metaclass=abc.ABCMeta):
 
 	@property
 	@abc.abstractmethod
-	def identity(self):
+	def identifier(self):
 		"""
 		# The identity of the node relative to its immediate container. The last point in the route.
 		"""
@@ -95,13 +96,12 @@ class Route(metaclass=abc.ABCMeta):
 		# Construct a new &Route with the given &points appended.
 		"""
 
-	@property
-	@abc.abstractmethod
-	def container(self):
-		"""
-		# Return a Route to the outer Route. This will *not* cross context boundaries.
-		"""
+class Segment(Selectors):
+	"""
+	# A purely relative path.
+	"""
 
+class Route(Selectors):
 	# System Queries; methods that actually interacts with the represented object
 	# Potentially, this should be a distinct metaclass.
 
@@ -127,88 +127,121 @@ class Route(metaclass=abc.ABCMeta):
 		# the subject.
 		"""
 
-@collections.abc.Hashable.register
-class Perspective(metaclass=abc.ABCMeta):
+class FileInterface(metaclass=abc.ABCMeta):
 	"""
-	# An object of near arbitrary consistency dictating the consistency of a particular
-	# &Point.
-	"""
-
-@collections.abc.Hashable.register
-class Point(metaclass=abc.ABCMeta):
-	"""
-	# A point in an arbitrary hierarchy with respect to a configured perspective.
+	# File system APIs for supporting common access functions.
 	"""
 
 	@abc.abstractmethod
-	def rotate(self, perspective):
+	def load(self) -> bytes:
 		"""
-		# Construct a new Point at the same location using a different perspective.
-		# Normally used to access a different set of properties, but directories and lineals
-		# may be different as well.
+		# Retrieve the binary data from the file referenced by the &Route.
+
+		# If the storage system being referenced by the Route is not storing binary data,
+		# then the object stored should be transformed into binary data. For instance,
+		# if the Route was bound to a virtual filesystem that was storing &str instances,
+		# then the returned object should be encoded using a context configured encoding.
 		"""
 
-	@property
 	@abc.abstractmethod
-	def perspective(self):
+	def store(self, data:bytes) -> None:
 		"""
-		# The relevant perspective used to refer to the selection.
-		# Primarily used as a parameter to identify the visibility of relationships.
-
-		# &None if not applicable.
+		# Store the given &data at the &Route.
 		"""
 
-	@property
 	@abc.abstractmethod
-	def root(self):
+	def get_text_content(self) -> str:
 		"""
-		# An object representing the root of a hierarchy; the last lineal.
-
-		# Unlike &Route instances, &Point's are not constrained to a context, so the boundaries
-		# are defined by the graph that is being interrogated.
+		# Retrieve the contents of the file reference by the &Route as a &str.
 		"""
 
-	@property
 	@abc.abstractmethod
-	def route(self):
+	def set_text_content(self, text:str) -> None:
 		"""
-		# Reference to the object being interfaced relative to &root.
-		# The &route with respect to the &root procures this &Point.
-
-		# The context of the &Route will be initialized to the absolute path to the &Point.
+		# Set the contents of the file to the given &text.
 		"""
 
-	@property
 	@abc.abstractmethod
-	def lineals(self):
+	def get_last_modified(self) -> "timestamp":
 		"""
-		# An ordered mapping of objects that lead to the subject.
-		# The index is an offset of the distance from the &route; index zero is the immediate parent.
+		# Retrieve the timestamp that the file at the &Route was last modified at.
 		"""
 
-	@property
 	@abc.abstractmethod
-	def directory(self):
+	def set_last_modified(self, timestamp):
 		"""
-		# An ordered mapping of objects that are directly related to the subject;
-		# normally, objects contained by the subject itself.
-
-		# Large or infinite associations will often use custom types.
+		# Update the modification time of the file identified by the &Route.
 		"""
 
-	@property
 	@abc.abstractmethod
-	def contexts(self):
+	def type(self) -> str:
 		"""
-		# An ordered mapping of objects that are contextually relavant to the subject.
-
-		# The meaning and consistency of &contexts is wholly dependant on the underlying
-		# representation of the concept.
+		# A string identifying the type of file selected by the &Route.
 		"""
 
-	@property
 	@abc.abstractmethod
-	def properties(self):
+	def is_disconnected_link(self) -> bool:
 		"""
-		# Mapping providing information about the subject relevant to the perspective.
+		# Whether the &Route selects a symbolic link whose target does not exist.
 		"""
+
+	@abc.abstractmethod
+	def is_regular_file(self) -> bool:
+		"""
+		# Whether the &Route selects a regular file.
+		"""
+
+	@abc.abstractmethod
+	def is_directory(self) -> bool:
+		"""
+		# Whether the &Route selects a directory.
+		"""
+
+	@abc.abstractmethod
+	def executable(self) -> bool:
+		"""
+		# Whether or not the regular file is executable.
+
+		# Directories marked as executable are not considered executables.
+		"""
+
+	@abc.abstractmethod
+	def searchable(self) -> bool:
+		"""
+		# Whether or not the directory's listing can be retrieved.
+
+		# Regular files marked as executable are not considered searchable.
+		"""
+
+	@abc.abstractmethod
+	def exists(self) -> bool:
+		"""
+		# Whether the file exists.
+		"""
+
+	@abc.abstractmethod
+	def files(self) -> typing.Collection["File"]:
+		"""
+		# Return a sequence of &Route instances that are normal files contained
+		# within the &Route.
+		"""
+
+	@abc.abstractmethod
+	def subdirectories(self) -> typing.Collection["File"]:
+		"""
+		# Return a sequence of &Route instances that are directories contained
+		# within the &Route.
+		"""
+
+	@abc.abstractmethod
+	def select(self:Route, pattern:object, area:str='directory') -> typing.Collection[Route]:
+		"""
+		# Select the set of files relative to the &Route that match the given &pattern
+		# within the designated &area.
+		"""
+
+@FileInterface.register
+class File(Route):
+	"""
+	# A &Route that implements the &FileInterface protocol.
+	"""
