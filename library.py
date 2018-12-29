@@ -1,11 +1,5 @@
 """
-# File system and Python Module routes. Manipulate paths and query the file system.
-
-# &.library provides the only functionality of the project. The &File and &Import classes
-# allow the management of filesystem and import routes with query methods that can
-# interrogate their respective systems. The &Route base class is designed for subclassing;
-# the point-sequence manipulation functions and context management allows Routes of different
-# types to be defined that share similar semantics with respect to finite identifier selection.
+# Route and Segment implementation used by &..system.files and &..system.python.
 
 # [ File System ]
 
@@ -14,7 +8,7 @@
 # working directory of the process:
 
 #!/pl/python
-	route = libroutes.File.from_path('file-in-current-directory')
+	route = fault.system.files.Path.from_path('file-in-current-directory')
 
 # Normally, Routes are created from class methods, not from type instantiation.
 # File systems routes have a number of constructors:
@@ -34,7 +28,7 @@
 # the Route from the module's full path.
 
 #!/pl/python
-	route = libroute.Import.from_fullname('fault.routes.library')
+	route = fault.system.python.Import.from_fullname('fault.routes.library')
 
 # Imports have fewer constructors:
 
