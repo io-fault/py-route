@@ -1,27 +1,27 @@
 import sys
 
-from .. import library as libroutes
+from ...system import files
 from ...time import library as libtime
 
 def main(timestamp:str, *paths, file=None):
 	"""
 	# [ Parameters ]
 
-	# /timestamp
-		# /`'now'`
+	# /timestamp/
+		# /`'now'`/
 			# Print the list of files in the directory
 			# that are said to have been modified in the future.
-		# /`'recently'`
+		# /`'recently'`/
 			# Print the list of files that have been modified
 			# within the last 16 minutes.
-		# /`timestamp.isdigit()`
+		# /`timestamp.isdigit()`/
 			# Print the list of files that have been modified
 			# within the last `int(timestamp)` seconds.
-		# /`<iso formatted timestamp>`
+		# /`<iso formatted timestamp>`/
 			# Print the list of files that have been modified
 			# since the ISO-9660 formmated timestamp.
 
-	# /paths
+	# /paths/
 		# A set of relative paths to search for modifications within.
 	"""
 
@@ -35,7 +35,7 @@ def main(timestamp:str, *paths, file=None):
 		timestamp = libtime.Timestamp.of(iso=timestamp)
 
 	for x in paths:
-		r = libroutes.File.from_path(x)
+		r = files.Path.from_path(x)
 		for mt, mr in r.since(timestamp):
 			print(str(mr).replace('\n', '\\n'), file=file)
 
