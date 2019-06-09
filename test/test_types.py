@@ -1,17 +1,14 @@
 """
 # Check the sequence manipulations provided by the base classes.
 """
-
-import os
-import sys
-from .. import library as lib
+from .. import types as module
 
 def test_inconsistent_type_equality(test):
 	# routes are rather abstract, but we dont want Routes for a given
 	# domain to match Routes with equal routing that exist in a distinct domain
-	class KRoute(lib.Route):
+	class KRoute(module.Selector):
 		pass
-	class JRoute(lib.Route):
+	class JRoute(module.Selector):
 		pass
 
 	kr = KRoute(None, ('point',))
@@ -28,7 +25,7 @@ def test_Route(test):
 	"""
 	# Test all of the Route base class methods and properties manipulating the context and points.
 	"""
-	Type = lib.Route
+	Type = module.Selector
 	root = Type(None, ())
 	sub = Type(root, ('first',))
 	subsub = Type(sub, ('second',))
@@ -88,21 +85,11 @@ def test_Route(test):
 	test/(+s5).context.points == (s5.absolute)
 	test/(+s5).context.context == None
 
-def test_Route_relative_resolution(test):
-	"""
-	# Check relative path resolution.
-	"""
-	Function = lib.Route._relative_resolution
-	test/Function(('first', '.', 'second')) == ['first', 'second']
-	test/Function(('first', 'second', '..')) == ['first']
-	test/Function(('first', 'second', '..', '..')) == []
-	test/Function(('first', 'second', '..', '..', '..')) == []
-
 def test_Route_path(test):
 	"""
-	# Test &lib.Route.path.
+	# - &module.Selector.path
 	"""
-	Type = lib.Route
+	Type = module.Selector
 	common = Type(None, ('prefix', 'common'))
 	target = common / 'dir' / 'subdir' / 'target'
 	origin = common / 'distinct' / 'path' / 'to' / 'file'
