@@ -246,31 +246,3 @@ class PartitionedSequence(object):
 				del rob[-parent_count:]
 
 		return rob
-
-class Route(PartitionedSequence):
-	"""
-	# Route domain base class.
-	"""
-
-class Segment(PartitionedSequence):
-	"""
-	# A path segment used to refer to a series of points in a &Route out-of-context.
-	"""
-
-	__slots__ = ('context', 'points',)
-
-	def __str__(self):
-		return (">>".join(self.absolute))
-
-	def __repr__(self):
-		return "%s.%s.from_sequence(%r)" %(__name__, self.__class__.__name__, list(self.absolute))
-
-	@classmethod
-	def from_sequence(Class, points):
-		return Class(None, tuple(points))
-
-	def __sub__(self, removed:"Segment") -> "Segment":
-		n = len(removed)
-		if n and self.points[-n:] == removed:
-			return self.__class__(self.context, self.points[:-n])
-		return self
