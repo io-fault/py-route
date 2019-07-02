@@ -1,7 +1,8 @@
 import sys
 
 from ...system import files
-from ...time import library as libtime
+from ...time import types as timetypes
+from ...time import sysclock
 
 def main(timestamp:str, *paths, file=None):
 	"""
@@ -26,13 +27,13 @@ def main(timestamp:str, *paths, file=None):
 	"""
 
 	if timestamp == 'now':
-		timestamp = libtime.now()
+		timestamp = sysclock.now()
 	elif timestamp == 'recently':
-		timestamp = libtime.now().rollback(minute=16)
+		timestamp = sysclock.now().rollback(minute=16)
 	elif timestamp.isdigit():
-		timestamp = libtime.now().rollback(second=int(timestamp))
+		timestamp = sysclock.now().rollback(second=int(timestamp))
 	else:
-		timestamp = libtime.Timestamp.of(iso=timestamp)
+		timestamp = timetypes.Timestamp.of(iso=timestamp)
 
 	for x in paths:
 		r = files.Path.from_path(x)
