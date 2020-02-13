@@ -119,15 +119,15 @@ class PartitionedSequence(object):
 		"""
 		# Select a node adjacent to the current selection.
 
-		# Returns a new &Route.
+		# Returns a new &PartitionedSequence.
 		"""
 		return self.container / replacement
 
 	def __pow__(self, ancestor:int, range=range):
 		"""
-		# Select the n-th ancestor of the route.
+		# Select the n-th ancestor of the route preserving context.
 
-		# Returns a new &Route.
+		# Returns a new &PartitionedSequence.
 		"""
 
 		y = self
@@ -146,7 +146,7 @@ class PartitionedSequence(object):
 
 	def __neg__(self):
 		"""
-		# Return a new &Route with &self's absolute points reversed.
+		# Return a new &PartitionedSequence with &self's absolute points reversed.
 		# The &context is not maintained in the returned instance.
 
 		# ! WARNING:
@@ -203,7 +203,7 @@ class PartitionedSequence(object):
 	@property
 	def root(self):
 		"""
-		# The root &Route with respect to the Route's context.
+		# The root &PartitionedSequence with respect to the Route's context.
 		"""
 
 		return self.__class__(self.context, self.points[0:1])
@@ -225,7 +225,7 @@ class PartitionedSequence(object):
 		"""
 		# Resolve points identified as self points, `.`, and container points, `..`.
 
-		# Used by &Route subclasses to support relative paths; this method should not be used
+		# Used by &PartitionedSequence subclasses to support relative paths; this method should not be used
 		# directly.
 		"""
 		rob = []
