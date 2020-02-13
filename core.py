@@ -58,11 +58,12 @@ class PartitionedSequence(object):
 
 		return containers, tuple(target_path[top:])
 
-	def __lshift__(self, target):
+	def __lshift__(self, operand):
 		"""
 		# Parameter inversion of &__rshift__.
+		# Construct a segment describing the path from &operand to &self.
 		"""
-		return target >> self
+		return operand >> self
 
 	def __hash__(self):
 		"""
