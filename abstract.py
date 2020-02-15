@@ -96,11 +96,6 @@ class Selectors(metaclass=abc.ABCMeta):
 		# Construct a new &Route with the given &points appended.
 		"""
 
-class Segment(Selectors):
-	"""
-	# A purely relative path.
-	"""
-
 class Route(Selectors):
 	# System Queries; methods that actually interacts with the represented object
 	# Potentially, this should be a distinct metaclass.
@@ -239,9 +234,3 @@ class FileInterface(metaclass=abc.ABCMeta):
 		# Select the set of files relative to the &Route that match the given &pattern
 		# within the designated &area.
 		"""
-
-@FileInterface.register
-class File(Route):
-	"""
-	# A &Route that implements the &FileInterface protocol.
-	"""
