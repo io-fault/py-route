@@ -197,10 +197,6 @@ class PartitionedSequence(object):
 		else:
 			return self
 
-	def extend(self, extension):
-		# Deprecating.
-		return self + extension
-
 	# Route Interfaces
 
 	def __xor__(self, operand):

@@ -35,18 +35,12 @@ def relative_resolution(
 
 	return r
 
-def _shift(self, target) -> (int, tuple):
-	n, l, seg = core.relative_path(target, self)
-	return l-n-1, (seg[n:])
-
 class Segment(core.PartitionedSequence):
 	"""
 	# Sequence of identifiers that may be incorporated into a selector subclass.
 	"""
 
 	__slots__ = ('context', 'points',)
-
-	__rshift__ = _shift
 
 	def __str__(self):
 		parts = ["->".join(x) for x in self.iterpartitions()]
@@ -85,7 +79,6 @@ class Selector(core.PartitionedSequence):
 	# Subclasses provide access methods to a resource identified
 	# by the sequence of identifiers contained within the selector instance.
 	"""
-	__rshift__ = _shift
 
 	def segment(self, from_stem=None,
 			Segment=Segment,

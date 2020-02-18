@@ -107,27 +107,6 @@ def test_Route_addition(test):
 		cat = root + fullpath
 		test/list(cat.absolute) == fullpath
 
-def test_Route_path(test):
-	"""
-	# - &module.Selector.path
-	"""
-	Type = module.Selector
-	common = Type(None, ('prefix', 'common'))
-	target = common / 'dir' / 'subdir' / 'target'
-	origin = common / 'distinct' / 'path' / 'to' / 'file'
-
-	test/origin >> target == (4, ('dir', 'subdir', 'target'))
-	test/target >> origin == (3, ('distinct', 'path', 'to', 'file'))
-
-	local1 = common / 'file-1'
-	local2 = common / 'file-2'
-	test/local1 >> local2 == (1, ('file-2',))
-	test/local2 >> local1 == (1, ('file-1',))
-
-	# now, nothing in common
-	outofscope = Type(None, ('file',))
-	test/outofscope >> local1 == (1, local1.absolute)
-
 def test_Route_plural_division(test):
 	"""
 	# Validate `r//segment` operations.
