@@ -199,21 +199,6 @@ class PartitionedSequence(object):
 
 	# Route Interfaces
 
-	def __xor__(self, operand):
-		ascent, segment = self.correlate(operand)
-
-		x = self
-		for i in range(ascent):
-			yield x
-			x = x.container
-
-		yield x
-
-		path = []
-		for y in segment:
-			path.append(y)
-			yield x + path
-
 	def __truediv__(self, identifier:Identifier):
 		"""
 		# Append the operand, &identifier, to the route.
@@ -230,15 +215,6 @@ class PartitionedSequence(object):
 
 		return NotImplemented
 
-	def __matmul__(self, segment):
-		"""
-		# Iterate over segment and return the combined path at those points added on &self.
-		"""
-		path = []
-		for x in segment.iterpoints():
-			path.append(x)
-			yield self + path
-
 	def __mul__(self, replacement:Identifier):
 		"""
 		# Route (final) suffix substitution.
@@ -247,7 +223,16 @@ class PartitionedSequence(object):
 
 	def __pow__(self, strip:int, range=range):
 		"""
-		# Select the n-th ancestor of the route preserving context.
+		# Select the n-th antecedent point of the route preserving context.
+		# Positive indexes select from the end of the route, and
+		# negative indexes select from the beginning.
+
+		# Power is a convenient notation for slicing from the end
+		# while maintaining partitioning.
+		# For `i` greater than `0`: `list(route ** i) == list(route)[:-i]`.
+		# Less than `0`: `list(route ** i) == list(route)[-i:]`.
+		# And equal to `0`: `list(route ** 0) == list(route)`.
+
 		# Returns a new route.
 		"""
 		if strip < 0:
@@ -258,6 +243,58 @@ class PartitionedSequence(object):
 		for x in range(strip):
 			y = y.container
 		return y
+
+	def __rshift__(self, segment):
+		"""
+		# Iterate over segment and return the combined path at those points added on &self.
+		"""
+
+		current = self
+		for p in segment.partitions():
+			for x in p:
+				current /= x
+				yield current
+
+			current = current.delimit()
+	__matmul__ = __rshift__
+
+	def __lshift__(self, segment):
+		"""
+		# Iterate over segment and return the combined path at those points added on &self
+		# in reverse order.
+		"""
+		state = self // segment
+
+		for i in range(len(segment)):
+			yield state
+			state = state.container
+
+	def __invert__(self):
+		"""
+		# Iterate over the ascending routes leading to &self stopping at the point before root.
+		"""
+		x = self
+		for i in range(len(x)):
+			yield x
+			x = x.container
+
+	def __xor__(self, operand):
+		"""
+		# Iterate over the inclusive path range starting from &self and stopping at &operand.
+		"""
+		ascent, segment = self.correlate(operand)
+
+		x = self
+		for i in range(ascent):
+			yield x
+			x = x.container
+
+		yield x
+
+		path = []
+		for y in segment:
+			path.append(y)
+			yield x + path
 
 	def iterpoints(self):
 		"""

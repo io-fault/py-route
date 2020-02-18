@@ -157,6 +157,45 @@ def test_Route_segment(test):
 	s /= 'target'
 	test/list(s.segment(p)) == ['segment-1', 'segment-2', 'segment-3', 'target']
 
+def test_Route_stepwise_shift(test):
+	root = module.Selector.from_partitions([
+		('root',),
+	])
+	s1 = module.Segment.from_partitions([
+		('prefix', 'stem-1'),
+		('path', 'to', 'target'),
+	])
+	p1 = module.Selector.from_partitions([
+		('root',),
+		('prefix', 'stem-1'),
+		('path', 'to', 'target'),
+	])
+
+	test/(root // s1) == p1
+
+	steps = list(root >> s1)
+	x = p1
+	y = list(steps) # copy
+	while y:
+		test/list(x) == list(y[-1])
+		x = x.container
+		del y[-1:]
+
+	steps.reverse()
+	test/list(root << s1) == steps
+
+def test_Route_stepwise_ascent(test):
+	root = module.Selector.from_partitions([])
+	p1 = module.Selector.from_partitions([
+		('root',),
+		('prefix', 'stem-1'),
+		('path', 'to', 'target'),
+	])
+	s1 = p1.segment()
+
+	steps = list(root << s1)
+	test/steps == list(~p1)
+
 if __name__ == '__main__':
 	import sys; from ...test import library as libtest
 	libtest.execute(sys.modules[__name__])
