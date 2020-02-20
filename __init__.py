@@ -6,7 +6,7 @@ import itertools
 from . import core
 
 Identifier = core.Identifier
-consistency = core.consistency
+consistency = core.consistency # Ultimately from fault.context.tools
 
 def relative_resolution(
 		points:typing.Tuple[Identifier],
