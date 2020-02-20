@@ -256,7 +256,6 @@ class PartitionedSequence(object):
 				yield current
 
 			current = current.delimit()
-	__matmul__ = __rshift__
 
 	def __lshift__(self, segment):
 		"""
