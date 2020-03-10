@@ -138,6 +138,21 @@ def test_Route_pickling(test):
 		test/r1 == r2
 		test/r1.partitions() == r2.partitions()
 
+def test_Route_switch(test):
+	"""
+	# - &module.PartitionedSequence.__mul__
+	"""
+	Type = module.PartitionedSequence
+	root = Type(None, ())
+
+	test/(root*'file') == root/'file'
+
+	path = root / 'directory'
+	test/(path*'file') == root/'file'
+
+	path = path.delimit()
+	test/(path*'file') == root/'file'
+
 if __name__ == '__main__':
 	import sys; from ...test import library as libtest
 	libtest.execute(sys.modules[__name__])

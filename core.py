@@ -219,6 +219,9 @@ class PartitionedSequence(object):
 		"""
 		# Route (final) suffix substitution.
 		"""
+		if not self.points:
+			return self.container / replacement
+
 		return self.__class__(self.context, partition_cache(*self.points[:-1], replacement))
 
 	def __pow__(self, strip:int, range=range):
