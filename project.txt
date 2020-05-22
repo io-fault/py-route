@@ -3,21 +3,15 @@
 		&<http://if.fault.io/project/information>
 
 /identifier/
-	`http://fault.io/python/routes`
+	&<http://fault.io/python/routes>
+/icon/
+	- (emoji)`🚏`
 /name/
 	`routes`
 /abstract/
 	Filesystem and module path manipulation tools
-/icon/
-	- (emoji)`🚏`
 
-/versioning/
-	`continuous`
-/status/
-	volatile
-
-/controller/
+/authority/
 	`fault.io`
 /contact/
-	`mailto:critical@fault.io`
-
+	&<http://fault.io/critical>
