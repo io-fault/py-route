@@ -9,7 +9,7 @@
 /name/
 	`routes`
 /abstract/
-	Filesystem and module path manipulation tools
+	Path data structure implementation and abstract class definition.
 
 /authority/
 	`fault.io`
