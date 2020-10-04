@@ -1,14 +1,13 @@
 """
 # Check utility functions present in &.__init__.
 """
-from . import module
-from .. import core
+from .. import rewrite as module
 
-def test_Route_relative_resolution(test):
+def test_rewrite_relative(test):
 	"""
 	# Check relative path resolution.
 	"""
-	Function = module.relative_resolution
+	Function = module.relative
 	test/Function(('first', '.', 'second')) == ['first', 'second']
 	test/Function(('first', 'second', '..')) == ['first']
 	test/Function(('first', 'second', '..', '..')) == []
