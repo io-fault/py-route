@@ -3,11 +3,11 @@
 		&<http://if.fault.io/project/information>
 
 /identifier/
-	&<http://fault.io/python/routes>
+	&<http://fault.io/python/route>
 /icon/
 	- (emoji)`🚏`
 /name/
-	`routes`
+	`route`
 /abstract/
 	Path data structure implementation and abstract class definition.
 
