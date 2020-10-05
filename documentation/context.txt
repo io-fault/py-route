@@ -1,12 +1,12 @@
 [ Glossary ]
 
-/Route
+/Route/
 	A path, real or imaginary, to a concept defined by the (term)`Subject Space`.
 	Routes consist of a &Context and a sequence of &Points.
 	Ultimately, a Route is a mere sequence of identifiers. However, identifiers
 	can be complex allowing predicates.
 
-/Context
+/Context/
 	The beginning of a particular Route. Contexts are used to establish an anchor
 	that operations are performed relative to. Often, the context is irrelevant for many
 	use-cases, but is often used as a conceptual equivalent to the
@@ -17,24 +17,24 @@
 	of contexts can be used to ultimately identify the points along the path in which
 	one handler passed the remaining points into the next.
 
-/Points
+/Points/
 	A sequence of identifiers that select a concept relative to the &Context.
 	Identifiers of abstract routes can be any hashable, but normally they are
 	a file's basename or a module's basename.
 
-/Subject Space
+/Subject Space/
 	The graph of concepts that the Route refers to.
 	The Selection of a Route is said to exist within the Subject Space.
 
-/Node
+/Node/
 	A real object in the (term)`Subject Space`. A (term)`Route` *refers*
 	to a Node. Routes consisting of identifiers independent of the
 	(term)`Subject Space` may refer to Nodes that do not exist.
 
-/Selection
+/Selection/
 	The concept identified by &Route.
 	Not all Routes have Selections as &Route instances are an arbitrary
 	sequence of identifiers.
 
-/System
+/System/
 	The (term)`Subject Space`.
