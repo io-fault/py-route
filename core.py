@@ -4,6 +4,9 @@
 # The primary class, &PartitionedSequence, is essentially a unrolled linked list
 # leveraging Python's reference counting to allow sharing of routes and segments
 # across instances.
+
+# Direct use of this class is likely inappropriate. Either &.types.Selector or &.types.Segment
+# should be subclassed in order to convey the presence of a target resource.
 """
 import functools
 import typing
