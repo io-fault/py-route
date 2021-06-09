@@ -100,6 +100,14 @@ class FileSystemPath(metaclass=abc.ABCMeta):
 	"""
 
 	@abc.abstractmethod
+	def fs_alloc(self):
+		"""
+		# Allocate the necessary resources to create the target path as a file or directory.
+
+		# Normally, this means creating the leading path to the identified resource.
+		"""
+
+	@abc.abstractmethod
 	def fs_load(self) -> bytes:
 		"""
 		# Retrieve the binary data from the file referenced by the &Route.
