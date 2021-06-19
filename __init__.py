@@ -1,3 +1,1 @@
-"""
-# Route data structures and protocols.
-"""
+# Project package module for supporting sys.path imports.
